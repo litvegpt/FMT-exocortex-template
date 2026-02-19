@@ -82,6 +82,12 @@ DS-strategy/
 - Определи: какие нерегулярные блоки применимы на этой неделе? (ретро, архитектура, разбор документа и др.)
 - Если есть — добавь в повестку
 
+#### 6.5. Контент-план недели (→ секция «Контент-план» в WeekPlan)
+
+- Выполни процесс из `prompts/content-plan.md`
+- Собери мероприятия, итоги, fleeting notes, готовые черновики → 5-10 постов
+- Результат включи в черновик WeekPlan как секцию `## Контент-план W{N}`
+
 #### 7. Сформировать черновик WeekPlan
 
 - Выбери РП из месячных приоритетов + WORKPLAN.md + carry-over + inbox
@@ -91,11 +97,13 @@ DS-strategy/
 
 #### 8. Сохрани черновик (ОБЯЗАТЕЛЬНО)
 
-1. Перемести предыдущий `WeekPlan W*.md` из `current/` в `archive/`
-2. Перемести предыдущий `DayPlan *.md` из `current/` в `archive/` (если есть)
-3. WeekReport оставь в `current/` (для пользователя и для клуба)
-4. Создай `current/WeekPlan W{N} YYYY-MM-DD.md` (Пн текущей недели)
-5. Закоммить в DS-strategy
+1. Перемести предыдущий `WeekPlan W*.md` из `current/` в `archive/week-plans/`
+2. Перемести предыдущий `DayPlan *.md` из `current/` в `archive/day-plans/` (если есть)
+3. Перемести предыдущий `WeekReport W*.md` из `current/` в `archive/week-reports/` (если есть; текущий WeekReport — тот, что создан week-review перед session-prep — оставь)
+4. Перемести предыдущий `SchedulerReport *.md` из `current/` в `archive/scheduler-reports/` (если есть и не текущий)
+5. Архивируй WP context files для **done** РП: `inbox/WP-*.md` → `archive/wp-contexts/` (проверь статус по WeekReport)
+6. Создай `current/WeekPlan W{N} YYYY-MM-DD.md` (Пн текущей недели)
+7. Закоммить в DS-strategy
 
 **Формат WeekPlan:**
 

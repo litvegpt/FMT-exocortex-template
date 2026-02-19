@@ -34,8 +34,8 @@
 | FPF (навигация, принципы) | `memory/fpf-reference.md` |
 | Правила по типам репо | `memory/repo-type-rules.md` |
 | Чеклисты | `memory/checklists.md` |
-| SOTA-практики | `memory/sota-reference.md` |
+| **SOTA-практики** | `memory/sota-reference.md` |
 | Обслуживание CLAUDE.md | `memory/claude-md-maintenance.md` |
 | Урок WP Gate | `memory/wp-gate-lesson.md` |
 | **Системно-специфичное** | **→ repo/CLAUDE.md** |
-| Стратег | `strategist-agent/README.md` |
+| Стратег | `DS-strategist/README.md` |
