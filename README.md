@@ -40,6 +40,9 @@
 | GitHub CLI | `gh --version` | macOS: `brew install gh` / Linux: [cli.github.com](https://cli.github.com/) |
 | GitHub аккаунт | `gh auth status` | `gh auth login` |
 | Claude Code | `claude --version` | `npm install -g @anthropic-ai/claude-code` |
+| WakaTime (рекомендуется) | Расширение в VS Code | VS Code → Extensions → «WakaTime» → Install → [API key](https://wakatime.com/settings/api-key) |
+
+> **WakaTime** автоматически трекает время работы в VS Code: по проектам, языкам, файлам, веткам. Бесплатный план: статистика за 2 недели. Данные используются Стратегом в Week Review (S03) и Morning Check (S42). Подробнее: [wakatime.com](https://wakatime.com).
 
 > **Автоматизация Стратега:** на macOS — launchd (устанавливается автоматически). На Linux — настройте cron вручную (`crontab -e`). Без автоматизации всё работает — Стратег запускается вручную: `bash strategist-agent/scripts/strategist.sh morning`
 
@@ -194,7 +197,7 @@ T1: Старт  →  T2: Изучение  →  T3: Персонализация
 | **Вход** | /start в боте (5 мин) | Подписка на программу | Заполнить Digital Twin (20 мин) | setup.sh (10 мин) | Владелец платформы |
 | **ИИ-роль** | Ассистент | Эксперт | Наставник | Со-мыслитель | Архитектор |
 | **Бот** | Марафон, Лента | + Руководства, Программы | + Персональные ответы | Всё из T3 + Claude Code | Всё из T4 |
-| **Рабочее пространство** | Только бот | Бот + контент | + Digital Twin | + Git + Claude Code + Стратег | + исходный код + деплой |
+| **Рабочее пространство** | Только бот | Бот + контент | + Digital Twin | + Git + Claude Code + Стратег + WakaTime | + исходный код + деплой |
 | **Знания** | Поиск по базе | + полный доступ к гайдам | + персонализация | + свои Pack и DS | + управление standard/ |
 
 ---
