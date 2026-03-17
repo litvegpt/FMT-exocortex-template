@@ -5,6 +5,14 @@ All notable changes to FMT-exocortex-template will be documented in this file.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versioning: [Semantic Versioning](https://semver.org/).
 
+## [0.8.4] — 2026-03-17
+
+### Added
+- **docs/onboarding/** — руководство-онбординг IWE для новичков (WP-120):
+  - `onboarding-guide.md` — концептуальный обзор (7 разделов: карта IWE, компоненты, проблемы, решения, путь от нуля, «не бойся», системное мышление)
+  - `onboarding-slides.md` — Marp-презентация (22 слайда, self-paced, светлая тема)
+  - `onboarding-diagrams.md` — 6 Mermaid-схем (карта компонентов, путь пользователя, ОРЗ, тиры T1-T4, экзоскелет vs протез, проблема→решение)
+
 ## [0.8.3] — 2026-03-17
 
 ### Added
