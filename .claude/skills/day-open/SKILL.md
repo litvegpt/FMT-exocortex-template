@@ -11,6 +11,7 @@ version: 1.0.0
 > **Порядок:** сначала DayPlan → потом compact. **Дата:** ПЕРВОЕ действие = `date`.
 > **Режим:** `memory/day-rhythm-config.yaml` → `interactive: false` = одним блоком, решения → «Требует внимания».
 > **Фильтр свежести:** issues, видео, заметки — за 2 дня. Urgent — всегда.
+> **Issues — только actionable:** пропускать read-only репо (CLAUDE.md) и upstream без push-доступа (Base, чужие fork). Показывать только из репо, где пользователь может действовать.
 > **Алгоритм Day Open:** `memory/protocol-open.md § Масштаб: День`.
 > **Шаблоны:** ниже.
 
