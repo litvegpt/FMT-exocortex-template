@@ -1,14 +1,14 @@
 Выполни сценарий «Сессия стратегирования» для роли Стратег (R1).
 
-Источник сценария: {{WORKSPACE_DIR}}/PACK-digital-platform/pack/digital-platform/02-domain-entities/DP.ROLE.012-strategist/scenarios/scheduled/01-strategy-session.md
+Источник сценария: /home/evgeny/Github/PACK-digital-platform/pack/digital-platform/02-domain-entities/DP.ROLE.012-strategist/scenarios/scheduled/01-strategy-session.md
 
 ## Контекст
 
-- **HUB (личные планы):** {{WORKSPACE_DIR}}/DS-strategy/current/
-- **Документы стратегии:** {{WORKSPACE_DIR}}/DS-strategy/docs/ (Strategy.md, Dissatisfactions.md, Session Agenda.md)
-- **Inbox:** {{WORKSPACE_DIR}}/DS-strategy/inbox/
-- **SPOKE (планы репо):** {{WORKSPACE_DIR}}/*/WORKPLAN.md
-- **MEMORY:** ~/.claude/projects/{{CLAUDE_PROJECT_SLUG}}/memory/MEMORY.md
+- **HUB (личные планы):** /home/evgeny/Github/DS-strategy/current/
+- **Документы стратегии:** /home/evgeny/Github/DS-strategy/docs/ (Strategy.md, Dissatisfactions.md, Session Agenda.md)
+- **Inbox:** /home/evgeny/Github/DS-strategy/inbox/
+- **SPOKE (планы репо):** /home/evgeny/Github/*/WORKPLAN.md
+- **MEMORY:** ~/.claude/projects/-home-evgeny-Github/memory/MEMORY.md
 
 ## Предусловие
 

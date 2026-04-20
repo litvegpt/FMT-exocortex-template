@@ -1,3 +1,7 @@
+---
+valid_from: 2026-04-13
+originSessionId: 9a0e726a-951e-4408-9e02-94d7eeffbf74
+---
 # Навигация по репозиториям (Слой 3)
 
 > Claude читает этот файл при поиске конкретного файла/репо. Для поиска знаний → `mcp__claude_ai_knowledge-mcp__search`.
@@ -12,7 +16,10 @@
 | Чеклисты | `memory/checklists.md` |
 | SOTA-практики (18 шт.) | `memory/sota-reference.md` |
 | Протокол Open (WP Gate, Ритуал) | `memory/protocol-open.md` |
-| Протокол Close (чеклист, шаблон) | `memory/protocol-close.md` |
+| Протокол Close (маршрутизация, Quick Close) | `memory/protocol-close.md` |
+| Day Close (полный алгоритм) | `.claude/skills/day-close/SKILL.md` |
+| Week Close (полный алгоритм) | `.claude/skills/week-close/SKILL.md` |
+| Шаблоны DayPlan/WeekPlan | `memory/templates-dayplan.md` |
 | Нулевые принципы + иерархия | `ZP/README.md` |
 | Кодирование сущностей | `SPF/spec/SPF.SPEC.001-entity-coding.md` |
 | Масштабируемость Pack | `SPF/spec/SPF.SPEC.003-pack-scalability.md` |
