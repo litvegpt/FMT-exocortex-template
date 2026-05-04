@@ -9,7 +9,7 @@ day_open:
   interactive: false            # false = Day Open одним блоком. true = промежуточные вопросы.
   calendar_ids: []              # Calendar IDs to check. Empty = all available calendars.
                                 # Examples: ['primary', 'work@company.com', 'team-calendar-id@group']
-  mode: full                    # full | slim
+  mode: slim                    # full | slim
                                 # full  = все шаги (по умолчанию)
                                 # slim  = быстрый старт: коммиты, заметки (urgent), план, IWE-светофор, compact dashboard
 
