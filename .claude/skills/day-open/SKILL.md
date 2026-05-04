@@ -2,7 +2,7 @@
 name: day-open
 description: "Протокол открытия дня (Day Open). Собирает вчерашние коммиты, issues, заметки, календарь, бота QA, Scout, мир — формирует DayPlan и compact dashboard."
 argument-hint: ""
-version: 1.1.0
+version: 1.2.0
 ---
 
 # Day Open (протокол открытия дня)
@@ -14,6 +14,35 @@ version: 1.1.0
 > **Issues — только actionable:** пропускать read-only репо (CLAUDE.md) и upstream без push-доступа (Base, чужие fork).
 > **Шаблоны:** ниже (после алгоритма).
 
+## Режимы запуска
+
+Читать `day_open.mode` из `memory/day-rhythm-config.yaml`. Вывести в начале: `Режим: full` или `Режим: slim`.
+
+| Шаг | full | slim |
+|-----|------|------|
+| 0 Extensions before | ✅ | ✅ |
+| 1 Вчера (DayPlan + коммиты) | ✅ | ✅ |
+| 1b GitHub Issues | ✅ | ❌ пропустить |
+| 1c Заметки | ✅ все | ✅ только urgent |
+| 2 План (WeekPlan + budget-spread) | ✅ | ✅ без budget-spread |
+| 3 Саморазвитие | ✅ | ❌ пропустить |
+| 4 Стратегирование (strategy_day check) | ✅ | ✅ |
+| 4b Помидорки | ✅ | ❌ пропустить |
+| 4c Календарь | ✅ | ❌ пропустить |
+| 5 IWE светофор (scheduler + update.sh) | ✅ | ✅ без Base-репо |
+| 5a2 Видео | ✅ | ❌ пропустить |
+| 5b Бот QA | ✅ | ❌ пропустить |
+| 5c Контент | ✅ | ❌ пропустить |
+| 5d Scout | ✅ | ❌ пропустить |
+| 6 Мир/Новости | ✅ | ❌ пропустить |
+| 6b Требует внимания | ✅ | ✅ |
+| 6c Extensions after | ✅ | ✅ |
+| 7a DayPlan в git | ✅ | ❌ пропустить |
+| 7b Extensions checks + commit | ✅ | ❌ пропустить |
+| 7c git commit + push | ✅ | ❌ пропустить |
+| 7d Compact dashboard | ✅ | ✅ |
+| Автологирование в day-open-log.csv | ✅ | ✅ |
+
 ## БЛОКИРУЮЩЕЕ: пошаговое исполнение
 
 Day Open = протокол. Исполнять ТОЛЬКО пошагово через TodoWrite.
@@ -24,6 +53,8 @@ Day Open = протокол. Исполнять ТОЛЬКО пошагово ч
 ## Алгоритм
 
 ### 0. Extensions (before)
+Зафиксировать `start_ts`: выполнить `date +%s` → сохранить значение для шага 8.
+Прочитать `day_open.mode` из `memory/day-rhythm-config.yaml`. Вывести: `Режим: [full|slim]`.
 Проверить: `ls extensions/day-open.before.md`. Если существует → `Read extensions/day-open.before.md` → выполнить содержимое как первые шаги. Не существует → пропустить.
 
 ### 1. Вчера
@@ -116,10 +147,29 @@ Scout report. Не проревьюен → «Требует внимания».
 Проверить: `ls extensions/day-open.after.md`. Если существует → `Read extensions/day-open.after.md` → выполнить содержимое (smoke-тесты, Scout gate, доп. проверки). Не существует → пропустить.
 
 ### 7. Запись
-**7a.** Записать DayPlan: `DS-my-strategy/current/DayPlan YYYY-MM-DD.md` по шаблону ниже. Предыдущий → `archive/day-plans/`.
-**7b.** Проверить: `ls extensions/day-open.checks.md`. Если существует → `Read extensions/day-open.checks.md` → выполнить верификацию. БЛОКИРУЮЩЕЕ: commit запрещён до прохождения checks.
-**7c.** `git commit` + `git push`.
+**7a.** Записать DayPlan: `DS-my-strategy/current/DayPlan YYYY-MM-DD.md` по шаблону ниже. Предыдущий → `archive/day-plans/`. `[full only]`
+**7b.** Проверить: `ls extensions/day-open.checks.md`. Если существует → `Read extensions/day-open.checks.md` → выполнить верификацию. БЛОКИРУЮЩЕЕ: commit запрещён до прохождения checks. `[full only]`
+**7c.** `git commit` + `git push`. `[full only]`
 **7d.** Compact dashboard → вывести в VS Code по шаблону ниже.
+
+### 8. Автологирование (всегда, любой режим)
+
+Записать строку в `DS-my-strategy/inbox/day-open-log.csv`:
+
+```bash
+# Формат: date,mode,start_ts,end_ts,missed_flags
+# start_ts = timestamp начала Day Open (взять из шага 0, команда `date +%s`)
+# end_ts   = timestamp сейчас (`date +%s`)
+# missed_flags = пропущенные шаги через | (для slim фиксировано; для full = пусто)
+```
+
+Строка для **full**: `YYYY-MM-DD,full,<start_ts>,<end_ts>,`
+Строка для **slim**: `YYYY-MM-DD,slim,<start_ts>,<end_ts>,issues|self-dev|calendar|bot-qa|content|scout|news|dayplan-git`
+
+Если файл не существует — создать с заголовком:
+```
+date,mode,start_ts,end_ts,missed_flags
+```
 
 ---
 
