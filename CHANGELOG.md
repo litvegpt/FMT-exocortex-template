@@ -5,6 +5,17 @@ All notable changes to FMT-exocortex-template will be documented in this file.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versioning: [Semantic Versioning](https://semver.org/).
 
+## [0.29.31] — 2026-05-06
+
+### Changed — WP-294 Sync-фаза WP Gate (доводка)
+
+После 0.29.30 верификация показала: bundler + sub-agent поставлялись, но не использовались — шаг 3 в `protocol-open.md` отдавал на L3-extension, которого у пользователей нет. Дефолт перенесён внутрь шага 3, extension стал override-точкой.
+
+- **`memory/protocol-open.md` § Sync Gate переписан** — дефолтное поведение веток A (тривиально, main agent), B (≥2 related или drift → Task → `wp-sync-actualizer`), C (противоречие → «Требует внимания» Ритуала) теперь встроено в шаг 3, не требует extension. Bundler+sub-agent работают «из коробки» сразу после `update.sh`.
+- **Race-guard** — state-файл `.claude/state/wp-sync-<N>.done` предотвращает повторный sync для одного WP в одной сессии.
+- **Exit 2 в bundler** — `validate_frontmatter()` проверяет наличие двух `---` маркеров, иначе exit 2 + `[PARSE-ERROR]` в stderr. Ранее отсутствовало (контракт описан, не реализован).
+- **`extensions/protocol-open.sync.md`** (опционально, L3) — теперь чистая override-точка с шаблоном для замены sub-agent'а / порогов веток / сторонних обогащений bundle. По умолчанию не нужен.
+
 ## [0.29.30] — 2026-05-06
 
 ### Added — WP-294 Sync-фаза WP Gate (актуализация контекста РП при упоминании номера)

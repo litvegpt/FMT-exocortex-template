@@ -22,6 +22,20 @@ GIT_LOG_DAYS="${WP_SYNC_GIT_DAYS:-14}"
 # ---------------------------------------------------------------------------
 log_warn() { echo "[WARN] $*" >&2; }
 log_err()  { echo "[ERROR] $*" >&2; }
+log_parse_err() { echo "[PARSE-ERROR] $*" >&2; }
+
+# Validate that file has parseable YAML frontmatter (between two `---` markers)
+validate_frontmatter() {
+  local file="$1"
+  local fm_count
+  fm_count=$(grep -c '^---$' "$file" 2>/dev/null | head -1 || true)
+  fm_count="${fm_count:-0}"
+  if [[ "$fm_count" -lt 2 ]]; then
+    log_parse_err "Файл не имеет валидного YAML frontmatter (нужно минимум 2 строки '---'): $file"
+    return 1
+  fi
+  return 0
+}
 
 normalize_wp_num() {
   local arg="$1"
@@ -214,6 +228,11 @@ main() {
   if [[ -z "$wp_file" ]]; then
     log_err "WP-${wp_num}: файл не найден в inbox/ или archive/wp-contexts/"
     exit 1
+  fi
+
+  # Exit 2: parsing error (frontmatter не валиден)
+  if ! validate_frontmatter "$wp_file"; then
+    exit 2
   fi
 
   local location
