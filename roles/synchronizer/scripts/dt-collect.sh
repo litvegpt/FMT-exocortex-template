@@ -498,7 +498,7 @@ def parse_weekplan_budget_for_date(date_str, gov_dir):
         os.path.join(gov_dir, 'archive', 'week-plans', 'WeekPlan W*.md'),
         os.path.join(gov_dir, 'current', 'WeekPlan W*.md'),
     ]
-    # \S+ матчил "W16:" в "Итоги W16: 13 апр" раньше дневного "Итоги пн 13 апр" — block-split bug
+    # \\S+ матчил W16: в Итоги W16: 13 апр раньше дневного Итоги пн 13 апр — block-split bug
     section_re = re.compile(rf'Итоги\s+(?:пн|вт|ср|чт|пт|сб|вс)\s+{day_num}\s+{month_ru}', re.IGNORECASE)
     for pat in wp_patterns:
         for wp in glob.glob(pat):
