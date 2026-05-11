@@ -16,7 +16,6 @@ dt-collect-neon.py — запись собранных данных активн
 import json
 import os
 import sys
-from datetime import datetime, timezone
 
 
 def main():
@@ -74,8 +73,8 @@ def _write_psycopg2(neon_url, user_id, collected_data):
                     updated_at = NOW()
             """, (user_id, json.dumps(collected_data), json.dumps(collected_data)))
 
-            conn.commit()
-            print(f"OK: written for user {user_id}")
+        conn.commit()
+        print(f"OK: written for user {user_id}")
     finally:
         conn.close()
 
@@ -87,26 +86,27 @@ def _write_asyncpg(neon_url, user_id, collected_data):
     async def write():
         conn = await asyncpg.connect(neon_url)
         try:
-            await conn.execute("""
-                CREATE TABLE IF NOT EXISTS digital_twins (
-                    user_id TEXT PRIMARY KEY,
-                    data JSONB NOT NULL DEFAULT '{}',
-                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-                    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-                )
-            """)
+            async with conn.transaction():
+                await conn.execute("""
+                    CREATE TABLE IF NOT EXISTS digital_twins (
+                        user_id TEXT PRIMARY KEY,
+                        data JSONB NOT NULL DEFAULT '{}',
+                        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                    )
+                """)
 
-            await conn.execute("""
-                INSERT INTO digital_twins (user_id, data, created_at, updated_at)
-                VALUES ($1, jsonb_build_object('2_collected', $2::jsonb), NOW(), NOW())
-                ON CONFLICT (user_id) DO UPDATE SET
-                    data = COALESCE(digital_twins.data, '{}'::jsonb)
-                        || jsonb_build_object('2_collected',
-                            COALESCE(digital_twins.data->'2_collected', '{}'::jsonb)
-                            || $2::jsonb
-                        ),
-                    updated_at = NOW()
-            """, user_id, json.dumps(collected_data))
+                await conn.execute("""
+                    INSERT INTO digital_twins (user_id, data, created_at, updated_at)
+                    VALUES ($1, jsonb_build_object('2_collected', $2::jsonb), NOW(), NOW())
+                    ON CONFLICT (user_id) DO UPDATE SET
+                        data = COALESCE(digital_twins.data, '{}'::jsonb)
+                            || jsonb_build_object('2_collected',
+                                COALESCE(digital_twins.data->'2_collected', '{}'::jsonb)
+                                || $2::jsonb
+                            ),
+                        updated_at = NOW()
+                """, user_id, json.dumps(collected_data))
 
             print(f"OK: written for user {user_id}")
         finally:

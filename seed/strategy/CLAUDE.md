@@ -17,37 +17,32 @@
 ### Ключевые задачи
 
 1. **Стратегирование** — превращение неудовлетворённостей в приоритеты и РП
-2. **Планирование** — агрегация WORKPLAN.md из всех репо в единый план
+2. **Планирование** — агрегация активных РП в единый план через `scripts/active-wp-sweep.sh`
 3. **Ревью** — сбор коммитов и статистики из всех репо
 
-### WORKPLAN.md — Hub-and-Spoke
+### Источник активных РП (single source)
 
-Каждый репозиторий в `/home/evgeny/Github/` содержит `WORKPLAN.md` в корне с текущими РП.
+**Source-of-truth:** `WP-REGISTRY.md` (реестр) + `inbox/WP-*.md` (контексты со `status: in_progress|active`).
 
-**Агрегация:** При создании плана дня/недели Стратег:
-1. Обходит все `/home/evgeny/Github/*/WORKPLAN.md`
-2. Собирает РП со статусом pending/in-progress
-3. Формирует агрегированный план в `current/`
+**Агрегация:** `bash {{WORKSPACE_DIR}}/scripts/active-wp-sweep.sh` обходит `inbox/WP-*.md`, кросс-проверяет git-активность за 7 дней, выдаёт markdown-таблицу активных РП. Используется в session-prep и `memory-active-wp-update.sh` для секции «Активные РП» в MEMORY.md.
 
-**Обратная синхронизация:** При обновлении приоритетов Стратег:
-1. Обновляет `current/WeekPlan W{N} YYYY-MM-DD.md` в этом репо
-2. Обновляет соответствующие `WORKPLAN.md` в целевых репо
+**Антипаттерн:** `WORKPLAN.md` в корне репо (hub-and-spoke) — отменено WP-283 Ф-H (май 2026). Причина: дубликат WP-REGISTRY → drift. OwnerIntegrity: один факт — одно место.
 
 ### Сбор данных из всех репо
 
 **КРИТИЧЕСКИ ВАЖНО:** При сборе коммитов ВСЕГДА проверять ВСЕ репозитории:
 
 ```bash
-for repo in $(ls /home/evgeny/Github/); do
-  if [ -d /home/evgeny/Github/$repo/.git ]; then
-    echo "=== $repo ===" && cd /home/evgeny/Github/$repo && git log --oneline --since="1 week ago" 2>/dev/null
+for repo in $(ls {{WORKSPACE_DIR}}/); do
+  if [ -d {{WORKSPACE_DIR}}/$repo/.git ]; then
+    echo "=== $repo ===" && cd {{WORKSPACE_DIR}}/$repo && git log --oneline --since="1 week ago" 2>/dev/null
   fi
 done
 ```
 
 ## Work-Product Gate (правило РП-шлюза)
 
-> **Полное описание:** `/home/evgeny/Github/CLAUDE.md` секция 2.
+> **Полное описание:** `{{WORKSPACE_DIR}}/CLAUDE.md` секция 2.
 
 **БЛОКИРУЮЩЕЕ ПРАВИЛО.** Выполняется ДО ЛЮБОГО действия по задаче.
 

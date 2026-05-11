@@ -3,17 +3,17 @@
 
 ## Контекст
 
-- **HUB (личные планы):** /home/evgeny/Github/DS-strategy/current/
-- **Документы стратегии:** /home/evgeny/Github/DS-strategy/docs/ (ВСЕ файлы: Strategy.md, Dissatisfactions.md, Session Agenda.md)
-- **Inbox:** /home/evgeny/Github/DS-strategy/inbox/ ([fleeting-notes.md](https://github.com/дlitvegpt/DS-strategy/blob/main/inbox/fleeting-notes.md) + свежие файлы за неделю)
-- **SPOKE (планы репо):** /home/evgeny/Github/*/WORKPLAN.md
-- **Стратегические карты:** /home/evgeny/Github/*/MAPSTRATEGIC.md (если есть в репо)
-- **MEMORY:** ~/.claude/projects/-home-evgeny-Github/memory/MEMORY.md
+- **HUB (личные планы):** {{WORKSPACE_DIR}}/{{GOVERNANCE_REPO}}/current/
+- **Документы стратегии:** {{WORKSPACE_DIR}}/{{GOVERNANCE_REPO}}/docs/ (ВСЕ файлы: Strategy.md, Dissatisfactions.md, Session Agenda.md)
+- **Inbox:** {{WORKSPACE_DIR}}/{{GOVERNANCE_REPO}}/inbox/ ([fleeting-notes.md](https://github.com/{{GITHUB_USER}}/{{GOVERNANCE_REPO}}/blob/main/inbox/fleeting-notes.md) + свежие файлы за неделю)
+- **Активные РП:** `bash {{WORKSPACE_DIR}}/scripts/active-wp-sweep.sh` (агрегатор по `{{GOVERNANCE_REPO}}/inbox/WP-*.md` + git-активность 7д)
+- **Стратегические карты:** {{WORKSPACE_DIR}}/*/MAPSTRATEGIC.md (если есть в репо)
+- **MEMORY:** ~/.claude/projects/{{CLAUDE_PROJECT_SLUG}}/memory/MEMORY.md
 
 ## Именование файлов в current/
 
 ```
-DS-strategy/
+{{GOVERNANCE_REPO}}/
 ├── current/
 │   ├── WeekPlan W{N} YYYY-MM-DD.md    # план недели (Пн дата)
 │   └── DayPlan YYYY-MM-DD.md          # план дня
@@ -22,7 +22,7 @@ DS-strategy/
 ├── inbox/                              # fleeting-notes.md + входящие
 ```
 
-В `current/` — только актуальные файлы. Старые перемещаются в `DS-strategy/archive/`.
+В `current/` — только актуальные файлы. Старые перемещаются в `{{GOVERNANCE_REPO}}/archive/`.
 
 ## Предусловие
 
@@ -36,15 +36,15 @@ DS-strategy/
 
 #### 1. Прочитать итоги прошлой недели (→ блок «Ревью прошлой недели»)
 
-- Найди секцию «Итоги W{N-1}» в текущем `WeekPlan W*.md` в `DS-strategy/current/`
+- Найди секцию «Итоги W{N-1}» в текущем `WeekPlan W*.md` в `{{GOVERNANCE_REPO}}/current/`
 - Извлеки: completion rate, carry-over, инсайты
 
 > Если секция итогов не найдена — сообщить об ошибке и собрать коммиты самостоятельно (fallback).
 
 #### 2. Обработать inbox (→ блок «Разбор inbox и исчезающих заметок»)
 
-- Прочитай `DS-strategy/inbox/fleeting-notes.md`
-- Прочитай ВСЕ файлы из `DS-strategy/inbox/` (кроме .DS_Store и .docx)
+- Прочитай `{{GOVERNANCE_REPO}}/inbox/fleeting-notes.md`
+- Прочитай ВСЕ файлы из `{{GOVERNANCE_REPO}}/inbox/` (кроме .DS_Store и .docx)
 - Прочитай QA-отчёт бота: `DS-agent-workspace/scheduler/feedback-triage/` (последний по дате) — **структурированный отчёт** из feedback_triage DB: замечания (✏️) первые, urgent (high/critical) вторые, кластеры проблем третьи. Auto-triage уже выполнен ботом → Session-Prep проверяет кластеры (≥3 = **urgent** → WP-debt) и помечает resolved
 - Для каждой заметки/файла определи: → в план недели? → capture в Pack? → в повестку для обсуждения? → удалить?
 - **Недельная агрегация Inbox Triage:**
@@ -65,29 +65,29 @@ DS-strategy/
 
 #### 3. Проверить неудовлетворённости (→ блок «НЭП»)
 
-- Прочитай `DS-strategy/docs/Dissatisfactions.md`
+- Прочитай `{{GOVERNANCE_REPO}}/docs/Dissatisfactions.md`
 - Проверь: какие операционные НЭП разрешены (можно закрыть)?
 - Проверь: есть ли стратегические НЭП без привязки к РП на этой неделе?
 - Сформируй блок повестки с предложениями
 
 #### 4. Сверка со стратегией + агрегация MAPSTRATEGIC (→ блок «Стратегическая сверка»)
 
-- Прочитай `DS-strategy/docs/Strategy.md` — фокусы года, Q1 цели, приоритеты месяца
-- Прочитай `/home/evgeny/Github/*/MAPSTRATEGIC.md` (если файл есть в репо)
+- Прочитай `{{GOVERNANCE_REPO}}/docs/Strategy.md` — фокусы года, Q1 цели, приоритеты месяца
+- Прочитай `{{WORKSPACE_DIR}}/*/MAPSTRATEGIC.md` (если файл есть в репо)
 - **Агрегируй** фазы из MAPSTRATEGIC.md → обнови секцию «Текущие фазы (MAPSTRATEGIC)» в Strategy.md
 - Обнови «Приоритеты месяца» — статусы на основе итогов в WeekPlan
 - Проверь: соответствуют ли текущие РП стратегическому направлению?
 - Отметь расхождения (РП без привязки к стратегии, или стратегия без РП)
 
-#### 5. Обход WORKPLAN.md (Hub-and-Spoke)
+#### 5. Sweep активных РП (single source)
 
-- Прочитай `/home/evgeny/Github/*/WORKPLAN.md` из каждого репо
-- Собери все РП со статусом pending/in-progress
-- Выяви расхождения с HUB-планом
+- Запусти `bash {{WORKSPACE_DIR}}/scripts/active-wp-sweep.sh` — выдаёт markdown-таблицу активных РП из `{{GOVERNANCE_REPO}}/inbox/WP-*.md` (status: in_progress|active) + git-активность 7 дней
+- Выяви расхождения с HUB-планом (carry-over из предыдущего WeekPlan)
+- РП с git-активностью ≥7д, но не в HUB — кандидаты на добавление в новый WeekPlan
 
 #### 6. Проверить нерегулярные блоки (Session Agenda)
 
-- Прочитай `DS-strategy/docs/Session Agenda.md`
+- Прочитай `{{GOVERNANCE_REPO}}/docs/Session Agenda.md`
 - Определи: какие нерегулярные блоки применимы на этой неделе? (ретро, архитектура, разбор документа и др.)
 - Если есть — добавь в повестку
 
@@ -97,12 +97,36 @@ DS-strategy/
 - Собери мероприятия, итоги, fleeting notes, готовые черновики → 5-10 постов
 - Результат включи в черновик WeekPlan как секцию `## Контент-план W{N}`
 
-#### 7. Сформировать черновик WeekPlan
+#### 7. Сформировать черновик WeekPlan (применяя `PD.METHOD.017`)
 
-- Выбери РП из месячных приоритетов + WORKPLAN.md + carry-over + inbox
+> **Метод отбора РП:** [`PD.METHOD.017 Work Product Selection`](../../../../PACK-personal/pack/personal-development/03-methods/PD.METHOD.017-wp-selection.md). Четыре шага метода применяются ниже.
+
+**7.1. Candidate pool** (PD.METHOD.017 шаг 1) — собери всех кандидатов в одном списке:
+- (a) активные фазы R1-RN из приоритетов месяца (Strategy.md);
+- (b) carry-over из предыдущего WeekPlan (`status: pending` / `in_progress`);
+- (c) новые РП из inbox triage (предложения за неделю);
+- (d) РП из sweep'а (шаг 5) — активные с git-активностью, не в HUB.
 - **Нет Л-задач.** Всё = РП. Личные задачи (налоги, счета, документы) тоже получают номер РП и WP context file. Без номера задача теряется при carry-over.
-- **Актуализация статусов:** Для каждого РП в таблице проверь `inbox/WP-{N}-*.md` (WP context file). Если есть — бери статус и описание оттуда (source-of-truth прогресса), а не из WORKPLAN.md или предыдущего WeekPlan. WP context file > WORKPLAN.md > carry-over.
-- Сформируй таблицу с бюджетом
+- **Актуализация статусов:** для каждого РП в таблице проверь `inbox/WP-{N}-*.md` (WP context file) — это source-of-truth прогресса. Приоритет источников: WP context file > carry-over.
+
+**7.2. Priority marking** (PD.METHOD.017 шаг 2) — каждому РП проставь приоритет:
+- 🔴 критический (блокер или дедлайн ≤2 дня)
+- 🟡 высокий (дедлайн в пределах недели)
+- 🟢 средний (плановый)
+- ⚪ низкий / ongoing (минимальный maintenance budget)
+
+**7.3. Budget fit** (PD.METHOD.017 шаг 3) — сложи бюджеты выбранных РП:
+- Сравни сумму с доступными часами (Time Accounting `PD.METHOD.001`)
+- Превышение → демотируй или отложи РП с низким приоритетом
+- Недобор → подтяни из backlog
+- Ongoing РП — минимальный maintenance budget (обычно 0.5-3h)
+- **Time-boxing (Shape Up):** для каждого РП — hard cap бюджета. Маленькие = ≤4h, большие = 4-15h. Open-ended РП запрещены.
+- Зафиксируй явный список «Что НЕ берём в эту неделю и почему» — это часть выхода метода.
+
+**7.4. ТОС недели** (PD.METHOD.017 шаг 4) — назови ОДНО ограничение, снятие которого разблокирует наибольшую пропускную способность недели. Вынеси его в шапку повестки как «ТОС + запрос недели».
+
+**7.5. Финализация:**
+- Сформируй таблицу РП с бюджетами и приоритетами
 - Сформируй повестку сессии стратегирования (все блоки из шагов 1-6)
 - Сформулируй вопросы для обсуждения с пользователем
 
@@ -110,7 +134,7 @@ DS-strategy/
 
 1. Перемести предыдущий `WeekPlan W*.md` из `current/` в `archive/week-plans/`
 2. Перемести предыдущий `DayPlan *.md` из `current/` в `archive/day-plans/` (если есть)
-3. ~~WeekReport~~ — отдельный файл больше не создаётся (deprecated). Итоги — секция в WeekPlan.
+3. **WeekReport split (ОПТ-5, WP-297):** при создании нового WeekPlan — извлеки секции «Итоги прошлой недели» и «Итоги дня» из старого WeekPlan в новый `current/WeekReport W{N-1} YYYY-MM-DD.md` (frontmatter `type: week-report`, `status: in_progress`). Старый WeekReport (если есть) переместить в `archive/week-reports/`. Новый WeekPlan ссылается через frontmatter `week_report:`. Полный split-spec → CLAUDE.md §9.
 4. Перемести предыдущий `SchedulerReport *.md` из `current/` в `archive/scheduler-reports/` (если есть и не текущий)
 5. **Архивация WP context files (safety net — Close уже архивирует done-файлы):**
    - Для каждого `inbox/WP-*.md` сверь статус с MEMORY.md (source-of-truth)
@@ -125,9 +149,29 @@ DS-strategy/
    - Записи **без** метки `[processed]` или `[rejected]` → оставить (ещё не обработаны Экстрактором)
    - Прочие файлы (не fleeting-notes.md, не captures.md, не активные WP-*) → «Ещё нужен?» Нет → удали или `archive/notes/`
 7. Создай `current/WeekPlan W{N} YYYY-MM-DD.md` (Пн текущей недели)
-8. Закоммить в DS-strategy
+8. Закоммить в {{GOVERNANCE_REPO}}
 
 **Формат WeekPlan:**
+
+> **Split (ОПТ-5, WP-297):** WeekPlan = только намерения. Факты прошлой недели → отдельный `WeekReport W{N-1}` в `current/`. WeekPlan ссылается на WeekReport через frontmatter `week_report:`, не дублирует содержимое.
+
+> **БЛОКИРУЮЩЕЕ — WeekReport split:** НЕ включать секции «Итоги прошлой недели» в тело WeekPlan — только ссылка `week_report:` в frontmatter. Если `archive/week-reports/WeekReport W{N-1}*.md` уже существует (создан week-review) — переместить его в `current/` перед созданием WeekPlan. Если нет — создать по шагу 8.3.
+
+> **БЛОКИРУЮЩЕЕ — форматирование (formatting.md):** WeekPlan >80 строк → ВСЕ секции оборачивать в `<details>/<summary><b>Название</b></summary>`. Первая секция — `<details open>`, остальные — `<details>` (закрыты). БЕЗ `---` между секциями. Пример:
+> ```html
+> <details open>
+> <summary><b>Повестка сессии стратегирования</b></summary>
+>
+> ...содержимое...
+>
+> </details>
+> <details>
+> <summary><b>📋 Inbox Triage (недельный)</b></summary>
+>
+> ...содержимое...
+>
+> </details>
+> ```
 
 ```markdown
 ---
@@ -137,35 +181,41 @@ date_start: YYYY-MM-DD
 date_end: YYYY-MM-DD
 status: draft
 agent: Стратег
+week_report: WeekReport W{N-1} YYYY-MM-DD.md   # ссылка на факты прошлой недели
 ---
 
 # WeekPlan W{N}: DD мес — DD мес YYYY
 
----
+<details open>
+<summary><b>ТОС + запрос недели</b></summary>
 
-## Итоги прошлой недели W{N-1}
+> ОДНО ограничение, снятие которого разблокирует наибольшую пропускную способность недели (PD.METHOD.017 шаг 4).
 
-> Источник: секция «Итоги W{N-1}» из предыдущего WeekPlan
+**ТОС:** [одна формулировка]
+**Запрос недели:** [что нужно от себя или от других, чтобы снять ТОС]
 
-**Completion rate:** X/Y РП (N%)
+</details>
+<details open>
+<summary><b>Повестка сессии стратегирования</b></summary>
 
-**Carry-over:**
-- #N — что осталось
+## Повестка сессии стратегирования
 
-**Ключевые инсайты:**
-- ...
+> ОДНО ограничение, снятие которого разблокирует наибольшую пропускную способность недели (PD.METHOD.017 шаг 4).
 
-> Полные итоги: см. секцию «Итоги W{N-1}» в предыдущем WeekPlan (архив)
+**ТОС:** [одна формулировка]
+**Запрос недели:** [что нужно от себя или от других, чтобы снять ТОС]
 
 ---
 
 ## Повестка сессии стратегирования
 
 ### Стандартные пункты
-- [ ] Ревью прошлой недели (см. выше)
+- [ ] Ревью прошлой недели (источник — `WeekReport W{N-1}`)
 - [ ] 📋 Inbox Triage (недельный) — см. ниже
 - [ ] НЭП: [закрыть X, обсудить Y]
 - [ ] Стратегическая сверка: [расхождения, фазы]
+- [ ] **Применённые критерии отбора РП** (PD.METHOD.017): подтвердить ТОС + проверить Budget fit + Time-boxing
+- [ ] **Сверка РП↔НЭП:** для каждого РП — какой источник (R{N} приоритет месяца / S-НЭП)
 
 ---
 
@@ -193,17 +243,39 @@ agent: Стратег
 ---
 
 ## Приоритеты месяца
-[обновлённые приоритеты]
+[обновлённые приоритеты — без кодов и номеров РП, текстом по сути]
 
 ---
 
 ## План на неделю W{N}
 
-| # | РП | Бюджет | Статус | Дедлайн | Репо |
-|---|-----|--------|--------|---------|------|
-| ... | ... | ... | pending | ... | ... |
+| 🚦 | # | РП | Бюджет | Источник | P | Статус | Дедлайн | Репо |
+|----|---|----|--------|----------|---|--------|---------|------|
+| 🔴 | ... | ... | Nh | R{N} / S-НЭП | P3 | pending | ... | ... |
+
+> **Колонка «Источник» (Сверка РП↔НЭП):** `R{N}` = приоритет месяца, `S-НЭП-X` = неудовлетворённость, `carry` = перенос. РП без источника — сигнал «зачем это делаем?», требует решения на сессии.
+> **Колонка «P» (S-25, WP-196 Ф11 п8):** проект P1-P6 из `docs/Projects.md`. Каждый РП должен принадлежать какому-то проекту. Если репо не использует Projects.md — пропустить колонку.
 
 **Бюджет недели:** ~Nh
+
+### Баланс по P (если P-каскад активен)
+
+| Проект | Часов в W{N} | % бюджета |
+|--------|--------------|-----------|
+| P1 ... | ... | ... |
+
+> Цель: видеть крен. Один P доминирует (>60%) при наличии других активных P → переоценка приоритетов на сессии.
+
+### Time-boxing (PD.METHOD.017)
+
+- Маленькие РП (≤4h): N штук
+- Большие РП (4-15h): N штук
+- Open-ended РП: 0 (запрещены — каждый имеет hard cap)
+
+### Что НЕ берём в эту неделю и почему
+
+- РП X — отложен, причина: ...
+- РП Y — демотирован до W{N+1}, причина: ...
 
 ---
 
@@ -213,6 +285,23 @@ agent: Стратег
 |---|-----|--------|-----------|
 | — | **Сессия стратегирования: утвердить план** | 1h | обязательно |
 | ... | ... | ... | ... |
+
+---
+
+## Сверка РП↔НЭП (для Week Close)
+
+> Заполняется при Week Close. Для каждого закрытого РП — какая НЭП снята / какой R-результат продвинут?
+
+| РП | Источник (R/S-НЭП) | Результат | Снимает НЭП? |
+|----|--------------------|-----------|--------------|
+| ... | ... | ... | да / частично / нет |
+
+## Рекомендации изменений в НЭП и Стратегию (для Week Close)
+
+> Заполняется при Week Close. Что узнали на этой неделе → что менять в Dissatisfactions.md / Strategy.md.
+
+- **НЭП:** ...
+- **Strategy.md:** ...
 
 ---
 
@@ -227,12 +316,9 @@ agent: Стратег
 
 ## Post-session sync (выполняется Стратегом после утверждения WeekPlan)
 
-> **Правило:** По итогам стратегирования обновлять Strategy.md и все затронутые WORKPLAN.md. Это гарантирует, что данные не устаревают между сессиями.
+> **Правило:** По итогам стратегирования обновлять Strategy.md и MEMORY.md. WP-REGISTRY.md + `inbox/WP-*.md` = single source активных РП.
 
 1. **Strategy.md** — обновить «Приоритеты месяца» (статусы, бюджеты, новые приоритеты)
-2. **WORKPLAN.md** — для каждого репо, упомянутого в WeekPlan:
-   - Обновить статусы РП (done/in_progress/pending)
-   - Добавить новые РП
-   - Убрать done/archived
-3. **MEMORY.md** — синхронизировать таблицу «РП текущей недели»
+2. **WP-REGISTRY.md** — для каждого нового/закрытого РП в WeekPlan обновить строку реестра
+3. **MEMORY.md** — синхронизировать секцию «Активные РП» через `bash {{WORKSPACE_DIR}}/scripts/memory-active-wp-update.sh`
 4. Закоммитить все изменения

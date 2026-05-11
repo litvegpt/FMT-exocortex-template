@@ -19,7 +19,9 @@ echo "Генерация манифеста v$VERSION..."
 
 # Файлы/директории, которые НЕ включаются в манифест обновлений
 # seed/ — только при setup, README.md — пользователь кастомизирует,
-# settings.local.json — персональный, .gitkeep — маркеры
+# settings.local.json — персональный, .gitkeep — маркеры,
+# extensions/*.after.md, extensions/*.before.md, extensions/*.checks.md, extensions/mcp-user.json —
+# пользовательское пространство (update.sh явно не трогает, см. update.sh §"Не затрагивается")
 EXCLUDE_PATTERNS=(
     "seed/"
     ".claude/settings.local.json"
@@ -29,17 +31,29 @@ EXCLUDE_PATTERNS=(
     ".DS_Store"
 )
 
-# Только корневой README.md (не roles/*/README.md и т.д.)
+# Точные пути, которые НЕ обновляются через update.sh:
+# README.md, README.en.md — витрина форка, пользователь кастомизирует под себя
+# CONTRIBUTING.md — для контрибьюторов апстрима, не для пользователей
+# LICENSE — юридический документ, форк может иметь свою лицензию
+# params.yaml — пользовательские флаги протоколов (update.sh явно не трогает)
+# extensions/day-close.after.md, extensions/mcp-user.json — пример/конфиг в пользовательском
+#   пространстве extensions/; update.sh обещает «не трогать extensions/» (см. extensions/README.md)
 EXCLUDE_EXACT=(
     "README.md"
+    "README.en.md"
+    "CONTRIBUTING.md"
+    "LICENSE"
+    "params.yaml"
+    "extensions/day-close.after.md"
+    "extensions/mcp-user.json"
 )
 
-# Собираем файлы
+# Собираем файлы.
+# Источник: `git ls-files` — гарантирует, что в манифест попадут ТОЛЬКО tracked-файлы.
+# .gitignore-файлы (.exocortex.env, .claude.md.base, .claude/logs/, settings.local.json)
+# автоматически исключаются git'ом, что закрывает класс «runtime в манифесте» (WP-273 R4.1).
 FILES=()
-while IFS= read -r filepath; do
-    # Относительный путь
-    rel="${filepath#$SCRIPT_DIR/}"
-
+while IFS= read -r rel; do
     # Проверяем исключения
     skip=false
     for pattern in "${EXCLUDE_PATTERNS[@]}"; do
@@ -58,7 +72,7 @@ while IFS= read -r filepath; do
 
     $skip && continue
     FILES+=("$rel")
-done < <(find "$SCRIPT_DIR" -type f -not -path '*/.git/*' -not -name '.DS_Store' | sort)
+done < <(git -C "$SCRIPT_DIR" ls-files | sort)
 
 # Генерируем JSON
 {
@@ -79,9 +93,75 @@ done < <(find "$SCRIPT_DIR" -type f -not -path '*/.git/*' -not -name '.DS_Store'
     echo '}'
 } > "$MANIFEST"
 
+# === Deprecated files (исторический список — поддерживается вручную) ===
+# Каждая запись: path|reason
+# Только L1-платформенные файлы, которые update.sh когда-то ставил, а потом удалил.
+# update.sh удаляет их из установок пользователей при следующем обновлении.
+DEPRECATED_LIST=(
+    "LEARNING-PATH.md|moved to docs/LEARNING-PATH.md"
+    "memory/claude-md-maintenance.md|consolidated, removed in v0.27"
+    "memory/wp-gate-lesson.md|consolidated into protocol-work.md, removed in v0.27"
+    "roles/strategist/prompts/day-close.md|strategist role removed; use .claude/skills/day-close/"
+    "roles/strategist/prompts/day-plan.md|strategist role removed"
+    "roles/strategist/prompts/note-review.md|strategist role removed"
+    "roles/strategist/prompts/session-prep.md|strategist role removed"
+    "roles/strategist/prompts/strategy-session.md|strategist role removed; use .claude/skills/strategy-session/"
+    "roles/strategist/prompts/week-review.md|strategist role removed"
+    "roles/strategist/scripts/cleanup-processed-notes.py|strategist role removed"
+    "roles/strategist/scripts/cleanup-processed-notes.sh|strategist role removed"
+    "strategist-agent/README.md|strategist-agent directory removed in v0.24"
+    "strategist-agent/REPO-TYPE.md|strategist-agent directory removed"
+    "strategist-agent/prompts/day-close.md|strategist-agent directory removed"
+    "strategist-agent/prompts/day-plan.md|strategist-agent directory removed"
+    "strategist-agent/prompts/note-review.md|strategist-agent directory removed"
+    "strategist-agent/prompts/session-prep.md|strategist-agent directory removed"
+    "strategist-agent/prompts/strategy-cascade.md|strategist-agent directory removed"
+    "strategist-agent/prompts/strategy-session.md|strategist-agent directory removed"
+    "strategist-agent/prompts/strategy.md|strategist-agent directory removed"
+    "strategist-agent/prompts/week-review.md|strategist-agent directory removed"
+    "strategist-agent/scripts/strategist.sh|strategist-agent directory removed"
+)
+
+# Добавляем deprecated_files в JSON через Python
+DEPRECATED_JSON=""
+last_dep=$(( ${#DEPRECATED_LIST[@]} - 1 ))
+for i in "${!DEPRECATED_LIST[@]}"; do
+    entry="${DEPRECATED_LIST[$i]}"
+    dpath="${entry%%|*}"
+    dreason="${entry#*|}"
+    comma=","
+    [ "$i" -eq "$last_dep" ] && comma=""
+    DEPRECATED_JSON="${DEPRECATED_JSON}    {\"path\": \"${dpath}\", \"reason\": \"${dreason}\"}${comma}
+"
+done
+
+python3 -c "
+import json, sys
+
+with open('$MANIFEST') as f:
+    data = json.load(f)
+
+deprecated = []
+lines = '''$DEPRECATED_JSON'''.strip().splitlines()
+for line in lines:
+    line = line.strip().rstrip(',').strip()
+    if line:
+        try:
+            deprecated.append(json.loads(line))
+        except:
+            pass
+
+data['deprecated_files'] = deprecated
+
+with open('$MANIFEST', 'w', encoding='utf-8') as f:
+    json.dump(data, f, indent=2, ensure_ascii=False)
+    f.write('\n')
+"
+
 echo "Готово: $MANIFEST"
 echo "  Версия: $VERSION"
 echo "  Файлов: ${#FILES[@]}"
+echo "  Устаревших: ${#DEPRECATED_LIST[@]}"
 echo ""
 echo "Проверьте diff и закоммитьте:"
 echo "  git diff update-manifest.json"

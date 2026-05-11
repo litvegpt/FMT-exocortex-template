@@ -1,25 +1,25 @@
 Выполни сценарий Week Review для роли Стратег (R1).
 
 > **Триггер:** Автоматический — Пн 00:00 (полночь Вс→Пн, launchd).
-> Записывает итоги недели в секцию WeekPlan + создаёт пост для клуба. Служит входом для session-prep (Пн 4:00).
-> **WeekReport как отдельный файл НЕ создаётся** (deprecated 2026-03-25). Итоги — секция в WeekPlan.
+> Записывает итоги недели в WeekReport + создаёт пост для клуба. Служит входом для session-prep (Пн 4:00).
+> **Split (ОПТ-5, WP-297, 8 май):** WeekPlan = намерения, факты недели → отдельный `WeekReport W{N} YYYY-MM-DD.md`. Старое правило «WeekReport deprecated» (25 мар) — отменено.
 
 
 ## Контекст
 
-- **WeekPlan:** /home/evgeny/Github/DS-strategy/current/WeekPlan W*.md
+- **WeekPlan:** {{WORKSPACE_DIR}}/{{GOVERNANCE_REPO}}/current/WeekPlan W*.md
 
 ## Алгоритм
 
 ### 1. Сбор данных (Стратег собирает сам)
 
 ```bash
-# Для КАЖДОГО репо в /home/evgeny/Github/:
-git -C /home/evgeny/Github/<repo> log --since="last monday 00:00" --until="today 00:00" --oneline --no-merges
+# Для КАЖДОГО репо в {{WORKSPACE_DIR}}/:
+git -C {{WORKSPACE_DIR}}/<repo> log --since="last monday 00:00" --until="today 00:00" --oneline --no-merges
 ```
 
-- Пройди по ВСЕМ репозиториям в `/home/evgeny/Github/`
-- Загрузи текущий WeekPlan из `DS-strategy/current/`
+- Пройди по ВСЕМ репозиториям в `{{WORKSPACE_DIR}}/`
+- Загрузи текущий WeekPlan из `{{GOVERNANCE_REPO}}/current/`
 - Сопоставь коммиты с РП из WeekPlan
 - Определи статус каждого РП: done / partial / not started
 
@@ -47,7 +47,7 @@ git -C /home/evgeny/Github/<repo> log --since="last monday 00:00" --until="today
    - Что адаптировать (источник)
    - Для кого (сегмент С1/С2/С3)
    - Куда (Habr / LinkedIn / TG)
-4. Запиши контент-план в секцию «Итоги W{N}» в WeekPlan
+4. Запиши контент-план в секцию «Итоги W{N}» в WeekReport
 
 ### 4. Формат для клуба
 
@@ -55,20 +55,21 @@ git -C /home/evgeny/Github/<repo> log --since="last monday 00:00" --until="today
 - Добавь хештеги
 - Формат: компактный, читаемый, с метриками
 
-### 5. Сохранение итогов в WeekPlan
+### 5. Сохранение итогов в WeekReport (ОПТ-5 split)
 
-> **WeekReport как отдельный файл НЕ создаётся.** Итоги записываются в секцию WeekPlan.
+> **Split (WP-297):** факты недели → `WeekReport W{N} YYYY-MM-DD.md`. WeekPlan содержит только намерения.
 
-1. Открой текущий `DS-strategy/current/WeekPlan W{N}*.md`
-2. Найди или создай секцию `## Итоги W{N}` (после frontmatter, перед планом)
+1. Открой `{{GOVERNANCE_REPO}}/current/WeekReport W{N}*.md` (если файла нет — создай по шаблону frontmatter `type: week-report`, см. CLAUDE.md §9)
+2. Найди или создай секцию `## Итоги W{N}` (после frontmatter, в начале файла)
 3. Запиши туда: метрики, таблицу по репо, статусы РП, инсайты, carry-over, контент-план
-4. Закоммить в DS-strategy
+4. В WeekPlan W{N} (секции «Сверка РП↔НЭП» и «Рекомендации в НЭП и Стратегию») — заполни выводы для входа в Strategy Session W{N+1}
+5. Закоммить в {{GOVERNANCE_REPO}}
 
 ### 6. Создать пост для клуба (авто-публикация)
 
 > Пост итогов недели публикуется автоматически в Пн 07:14 МСК. Стратег создаёт его сразу со `status: ready`.
 
-1. Переключись на **роль Автора (R4)** и на основе секции «Итоги W{N}» в WeekPlan сформируй пост для клуба.
+1. Переключись на **роль Автора (R4)** и на основе секции «Итоги W{N}» в WeekReport сформируй пост для клуба.
 
    - § 2 — стандарт названий для итогов недели
    - § 3 — формат поста: аудитория `community`, структура для тега `итоги-недели` (4 уровня влияния, голос от первого лица, 400-700 слов)
@@ -78,8 +79,8 @@ git -C /home/evgeny/Github/<repo> log --since="last monday 00:00" --until="today
    **Обязательные данные от Стратега → Автору:**
    - Метрики недели (коммиты, completion rate, сравнение с прошлой неделей)
    - Ключевые факты (что реально было сделано)
-   - Carry-over → W{N+1} (из WeekPlan, секция «Итоги W{N}» → «Carry-over»)
-   - Фокус следующей недели (из WeekPlan, секция «Итоги W{N}» → «Следующая неделя»)
+   - Carry-over → W{N+1} (из WeekReport, секция «Итоги W{N}» → «Carry-over»)
+   - Фокус следующей недели (из WeekReport, секция «Итоги W{N}» → «Следующая неделя»)
 
    Автор использует carry-over и фокус для финала поста — «идеи на следующую неделю».
 
@@ -103,7 +104,7 @@ content_plan: null
 ```
 
 
-**Шаблон секции «Итоги W{N}» в WeekPlan:**
+**Шаблон секции «Итоги W{N}» в WeekReport:**
 
 ```markdown
 ## Итоги W{N}: DD мес — DD мес YYYY
@@ -144,7 +145,7 @@ content_plan: null
 
 > **ОБЯЗАТЕЛЬНО.** После создания поста — записать ссылку в WeekPlan текущей недели.
 
-1. Открой текущий `DS-strategy/current/WeekPlan W{N}*.md`
+1. Открой текущий `{{GOVERNANCE_REPO}}/current/WeekPlan W{N}*.md`
 2. Найди секцию «Контент-план W{N}» (или создай, если нет)
 3. Добавь строку:
 
@@ -156,7 +157,7 @@ content_plan: null
 > Эта ссылка позволяет: (а) Стратегу в session-prep видеть, какой пост создан, (б) пользователю проверить пост до публикации, (в) day-plan знать, что контент готов.
 
 Результат:
-- Секция «Итоги W{N}» в WeekPlan — как вход для session-prep
+- Секция «Итоги W{N}» в WeekReport — как вход для session-prep (через ссылку `week_report:` в WeekPlan frontmatter)
 - Ссылка на пост в WeekPlan — для отслеживания
 
 ### 8. Week Close: обслуживание MEMORY.md
