@@ -115,9 +115,20 @@ UPDATED_FILES=()
 UPDATED_LINES=()
 UNCHANGED=0
 
+# Count total files for progress display
+TOTAL_FILES=$(python3 -c "
+import json
+with open('$MANIFEST') as f:
+    data = json.load(f)
+print(len(data.get('files', [])))
+" 2>/dev/null || echo "?")
+DOWNLOAD_IDX=0
+
 # Parse manifest: extract path and desc for each file entry
 while IFS='|' read -r fpath fdesc; do
     [ -z "$fpath" ] && continue
+    DOWNLOAD_IDX=$((DOWNLOAD_IDX + 1))
+    printf "  (%s/%s) %s\r" "$DOWNLOAD_IDX" "$TOTAL_FILES" "$fpath"
 
     # Download remote file
     REMOTE_FILE="$TMPDIR_UPDATE/files/$fpath"
@@ -159,6 +170,7 @@ for entry in data.get('files', []):
     done
 }
 )
+printf "\n"
 
 # === Step 2b: Deprecated files (устаревшие L1-файлы к удалению) ===
 DEPRECATED_FOUND=()
@@ -830,6 +842,20 @@ if $ROLES_CHANGED && command -v launchctl >/dev/null 2>&1; then
                 echo "  ○ $(basename "$role_dir"): переустановите вручную"
         fi
     done
+fi
+
+# === Step 6e: Update local manifest version to reflect installed upstream ===
+if [ -f "$SCRIPT_DIR/update-manifest.json" ] && command -v python3 >/dev/null 2>&1; then
+    python3 -c "
+import json
+path = '$SCRIPT_DIR/update-manifest.json'
+with open(path) as f:
+    data = json.load(f)
+data['version'] = '$UPSTREAM_VERSION'
+with open(path, 'w') as f:
+    json.dump(data, f, indent=2, ensure_ascii=False)
+    f.write('\n')
+" 2>/dev/null && echo "  • update-manifest.json: версия обновлена до $UPSTREAM_VERSION"
 fi
 
 # === Step 7: Commit changes ===
