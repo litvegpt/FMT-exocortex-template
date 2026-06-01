@@ -6,7 +6,7 @@
 - **HUB (личные планы):** {{WORKSPACE_DIR}}/{{GOVERNANCE_REPO}}/current/
 - **Документы стратегии:** {{WORKSPACE_DIR}}/{{GOVERNANCE_REPO}}/docs/ (Strategy.md, Dissatisfactions.md, Session Agenda.md)
 - **Inbox:** {{WORKSPACE_DIR}}/{{GOVERNANCE_REPO}}/inbox/
-- **Активные РП:** `bash {{WORKSPACE_DIR}}/scripts/active-wp-sweep.sh` (агрегатор по `{{GOVERNANCE_REPO}}/inbox/WP-*.md` + git-активность 7д)
+- **SPOKE (планы репо):** {{WORKSPACE_DIR}}/*/WORKPLAN.md
 - **MEMORY:** ~/.claude/projects/{{CLAUDE_PROJECT_SLUG}}/memory/MEMORY.md
 
 ## Предусловие
@@ -31,6 +31,7 @@
 #### 1. Открытие сессии
 
 - Найди `WeekPlan W*.md` со `status: draft` в `{{GOVERNANCE_REPO}}/current/`
+- **Loop C input (WP-364 Ф2.2):** проверь `{{WORKSPACE_DIR}}/{{GOVERNANCE_REPO}}/current/weekly-digest.md`. Если файл есть и `valid_until ≥ today` — прочитай его как **supplementary input от Аналитика**: коммиты недели, закрытые РП, кандидаты bottleneck'а. Стратег (пилот) не обязан следовать кандидатам — это сырьё для собственного решения. Если файла нет или просрочен — пропусти этот пункт, работай по черновику и истории.
 - Покажи пользователю краткую сводку: повестка, ключевые вопросы, carry-over
 - Если сегодня первая сессия месяца — также упомяни ключевые цифры из MonthClose (мультипликатор, фаза, ✅/🔄 R)
 - Спроси: «Начнём по повестке или есть срочные вопросы?»
@@ -97,10 +98,11 @@
 
 - Пользователь подтверждает план
 - Смени `status: draft` → `status: confirmed` в WeekPlan
-- **ОБЯЗАТЕЛЬНО:** Обнови MEMORY.md → секция «РП текущей недели» через `bash {{WORKSPACE_DIR}}/scripts/memory-active-wp-update.sh` (single source — `{{GOVERNANCE_REPO}}/inbox/WP-*.md`)
+- Обнови WORKPLAN.md в целевых репо (обратная синхронизация)
+- **ОБЯЗАТЕЛЬНО:** Обнови MEMORY.md → секция «РП текущей недели» (актуальный список РП + статусы)
 - **ОБЯЗАТЕЛЬНО:** Если добавлена работа, не отражённая в Strategy.md → обнови Strategy.md (приоритеты месяца, фазы, Q1 результаты)
 - **ОБЯЗАТЕЛЬНО:** Очисти обработанные из fleeting-notes.md и inbox/
 - **ОБЯЗАТЕЛЬНО:** Обратная синхронизация MAPSTRATEGIC.md — если элемент из MAPSTRATEGIC взят в работу (создан РП) → обнови статус фазы в `<repo>/MAPSTRATEGIC.md` (пометь как in-progress, добавь ссылку на РП). Если фаза завершена (РП done) → пометь как done.
 - Закоммить изменения в {{GOVERNANCE_REPO}} и затронутых репо
 
-**Результат:** утверждённый WeekPlan W{N} (`status: confirmed`), обновлённые Strategy.md, MEMORY.md, MAPSTRATEGIC.md, очищенный inbox.
+**Результат:** утверждённый WeekPlan W{N} (`status: confirmed`), обновлённые Strategy.md, WORKPLAN.md, MEMORY.md, MAPSTRATEGIC.md, очищенный inbox.
