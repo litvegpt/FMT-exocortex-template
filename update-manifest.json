@@ -1,5 +1,5 @@
 {
-  "version": "0.34.1",
+  "version": "0.35.0",
   "description": "Манифест платформенных файлов FMT-exocortex-template. Используется update.sh для доставки обновлений.",
   "files": [
     {
@@ -138,10 +138,16 @@
       "path": ".claude/skills/ke/SKILL.md"
     },
     {
+      "path": ".claude/skills/kimi-peer-writer/SKILL.md"
+    },
+    {
       "path": ".claude/skills/month-close/SKILL.md"
     },
     {
       "path": ".claude/skills/pack-new/SKILL.md"
+    },
+    {
+      "path": ".claude/skills/peer-conversation/SKILL.md"
     },
     {
       "path": ".claude/skills/personal-guide-render/SKILL.md"
@@ -624,6 +630,9 @@
       "path": "scripts/check-setup-update-parity.sh"
     },
     {
+      "path": "scripts/claude-peer-adapter.sh"
+    },
+    {
       "path": "scripts/create-skill.sh"
     },
     {
@@ -678,6 +687,9 @@
       "path": "scripts/iwe-trace.py"
     },
     {
+      "path": "scripts/kimi-peer-adapter.sh"
+    },
+    {
       "path": "scripts/memory-active-wp-update.sh"
     },
     {
@@ -703,6 +715,9 @@
     },
     {
       "path": "scripts/pack-ci-install.sh"
+    },
+    {
+      "path": "scripts/peer-adapter-filter.py"
     },
     {
       "path": "scripts/route-task.sh"
@@ -751,6 +766,9 @@
     },
     {
       "path": "scripts/week-draft-init.sh"
+    },
+    {
+      "path": "sessions/00-index.md"
     },
     {
       "path": "setup.sh"

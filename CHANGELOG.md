@@ -42,10 +42,33 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 
 
-## [Unreleased] — обновлено 2026-05-31
 
-### Added
 
+
+
+
+
+## [0.35.0] — 2026-06-01
+
+### Added — WP-337 направление З Ф6: Peer-session инфраструктура в шаблоне
+
+Cross-agent peer-сессии (DP.SC.154) теперь работают «из коробки» после `update.sh`:
+
+- `scripts/kimi-peer-adapter.sh` — bridge для вызова Kimi из Claude-писателя (скилл `/peer-conversation`).
+  Multi-platform KIMI_BIN auto-detect (macOS / Linux / Windows VS Code Code-extension paths + PATH + `KIMI_BIN` env override).
+  Hindsight retain — opt-in через `IWE_HINDSIGHT_RETAIN=1`, gracefully skipped когда `hindsight_trigger.py` отсутствует.
+- `scripts/claude-peer-adapter.sh` — bridge для вызова Claude из Kimi-писателя (скилл `/peer-writer`).
+  CLAUDE_BIN auto-detect через PATH + стандартные npm-global / homebrew / `~/.local/bin` локации + `CLAUDE_BIN` env override.
+- `scripts/peer-adapter-filter.py` — `.agentigore` фильтр + PII sanity-check (15 паттернов hard-block: токены, ключи, JWT, URL Basic Auth, СНИЛС, файлы `*.pem`/`*.key`/`*.token`).
+- `sessions/00-index.md` — пустой журнал peer-сессий (заголовок таблицы).
+- В манифест добавлены ранее промотированные `.claude/skills/peer-conversation/SKILL.md` и `.claude/skills/kimi-peer-writer/SKILL.md` (закрыт drift от 30 мая).
+
+### Added — Прочее
+
+- `7e9aa78` feat(triage): post-2026-06-01 backlog cleanup infrastructure
+- `dc18e90` feat(detection): MVP FMT critical/deadline issues alert (peer-session 2026-06-01-18) (#145)
+- `6be164d` feat(hindsight): WP-337/А.13 FMT template — docker-compose, start, launchd, docs
+- `43e8268` feat(WP-377): promote pack-creator + org-dev + spf-guard
 - `f47bf49` feat(WP-348): promote apply-captures defer_until invariant to L1
 - `bc5686f` feat(L1): B-005 reliability обхода Backlog и pending-фаз
 - `fbc5585` feat(L1): promote DP.D.052 v2 формулировок из peer-сессии 2026-05-31-11
@@ -98,6 +121,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- `scripts/validate-fmt-scripts.sh` — добавлена **Проверка 5**: ловит хардкоды `$HOME/IWE/<author-repo>/(scripts|sessions|docs|current)/` и `~/IWE/...` (Python `expanduser`) в `.claude/skills/*/SKILL.md` без env-fallback `${IWE_GOVERNANCE_REPO:-...}`. Исключает строки с `#`, `export`, `echo`, `printf` (документация). Структурный фикс лазейки промоции скиллов.
 - `22cdd0d` chore(WP-377): R29 Детектор → R47 в hooks/lib/detectors
 - `b9e1658` docs(release): метрика fix-коммитов в RELEASE-PROCESS.md (PD-4, WP-347)
 - `33537d6` docs(promotion): B12 class + pair-on-promote convention (PZ-5)
@@ -114,6 +138,13 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- `f112f0d` fix: iwe-audit portability + release-audit-log.md (closes #24, #142) (#144)
+- `575ae4e` fix(notify): make TEMPLATES_DIR overridable via environment (#49)
+- `934e9c9` fix(verify): add model mapping for verification_class in wp type (#47)
+- `4a00339` fix(dt-collect): replace hardcoded DS-strategy with $GOVERNANCE_DIR (#46)
+- `065e60a` fix(day-close): portability — HOME_SLUG + rsync --delete (#119)
+- `df591ea` fix(dry-run-gate): make sentinel discovery session-agnostic (closes #59) (#60)
+- `bffd92c` fix(skill): quote pack-new description in SKILL.md frontmatter (#137)
 - `6b164f6` fix(promote): settings-promote --dry-run пропускает existence check (WP-347 PD-2 followup)
 - `c2e96e6` fix(promote): regenerate FMT skills-catalog.yaml (B12a)
 - `0ccb1e2` fix(catalog): generate-executor-catalog.py — раскрывать env IWE_GOVERNANCE_REPO в DEFAULT_OUTPUT
@@ -149,6 +180,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 - `72f7572` fix: hook paths — $CLAUDE_PROJECT_DIR/ convention for all hook commands
 - `e337183` fix(manifest): remove strategist prompts from deprecated_files — runner still uses them
 - `5bffbc9` fix: replace hardcoded DS-strategy with GOVERNANCE_DIR/GOVERNANCE_REPO env vars
+- `2c5e91d` fix(pack-templates): DP.WP.NNN — добавить §6 пример Stage Dependency Map
 
 
 ## [0.34.1] — 2026-05-21
