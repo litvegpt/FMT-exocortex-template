@@ -84,6 +84,14 @@ do_backup() {
   local count
   count=$(find "$EXOCORTEX_DST" -maxdepth 1 -type f \( -name '*.md' -o -name '*.yaml' -o -name '*.yml' \) | wc -l | tr -d ' ')
   log "  Синхронизировано: $count файлов → $EXOCORTEX_DST/"
+
+  # Backup user-rules.md → iwe-config/backups/ (авторские правила, вне git)
+  local user_rules_src="$MEMORY_SRC/user-rules.md"
+  local iwe_config="${IWE_CONFIG:-$HOME/Github/iwe-config}"
+  if [ -f "$user_rules_src" ] && [ -d "$iwe_config/backups" ]; then
+    cp "$user_rules_src" "$iwe_config/backups/user-rules.md.snapshot-$(date +%Y-%m-%d)"
+    log "  user-rules.md → iwe-config/backups/"
+  fi
 }
 
 # --- Шаг 2: Knowledge-MCP reindex ---
