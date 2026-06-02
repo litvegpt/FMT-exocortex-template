@@ -24,12 +24,13 @@ MD_END = "<!-- COMMUNICATION-STYLE-BASE-END -->"
 JS_START = "// COMMUNICATION-STYLE-BASE-START"
 JS_END = "// COMMUNICATION-STYLE-BASE-END"
 
-# Список downstream-файлов: (путь относительно корня FMT, тип)
+# Список downstream-файлов внутри шаблона FMT.
+# Добавляйте сюда только файлы, которые находятся внутри этого репозитория.
+# Для внешних репозиториев (бот, gateway-mcp и др.) создайте отдельный
+# конфиг-файл или передайте список через аргументы командной строки.
 DOWNSTREAM_FILES = [
     ("AGENTS.md", "markdown"),
     ("CLAUDE.md", "markdown"),
-    ("../DS-IT-systems/aist_bot_newarchitecture/config/standard_claude.md", "markdown"),
-    ("../DS-MCP/gateway-mcp/src/index.ts", "js"),
 ]
 
 
