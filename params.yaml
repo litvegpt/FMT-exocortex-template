@@ -27,6 +27,9 @@ auto_verify_code: true
 # Верификация Quick Close через sub-agent Haiku
 verify_quick_close: true
 
+# Глобальное отключение Haiku R23 верификации (Day Close / Quick Close)
+verification: false
+
 # === Уведомления ===
 
 # Telegram уведомления от ролей (strategist, extractor, synchronizer)
