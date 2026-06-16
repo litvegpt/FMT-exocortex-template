@@ -251,7 +251,9 @@ acquire_lock() {
 
 # Читаем strategy_day из конфига (L4 Personal)
 RHYTHM_CONFIG="$HOME/.claude/projects/-Users-$(whoami)-IWE/memory/day-rhythm-config.yaml"
+WEEK_CLOSE_DAY_NAME=$(grep 'week_close_day:' "$RHYTHM_CONFIG" 2>/dev/null | awk '{print $2}' || true)
 STRATEGY_DAY_NAME=$(grep 'strategy_day:' "$RHYTHM_CONFIG" 2>/dev/null | awk '{print $2}' || echo "monday")
+STRATEGY_DAY_NAME="${WEEK_CLOSE_DAY_NAME:-$STRATEGY_DAY_NAME}"
 # Конвертируем имя дня в номер (1=Mon..7=Sun)
 case "$STRATEGY_DAY_NAME" in
     monday)    STRATEGY_DAY_NUM=1 ;;

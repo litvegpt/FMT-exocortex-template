@@ -180,6 +180,8 @@ extract_strategy_context() {
 # Если сегодня strategy_day → не генерировать DayPlan (SKILL.md шаг 4).
 # Возвращает exit 2; extension обрабатывает этот код и выводит сообщение Claude.
 STRATEGY_DAY_NAME=$(read_yaml "day_open.strategy_day" || true)
+WEEK_CLOSE_DAY_NAME=$(read_yaml "day_open.week_close_day" || true)
+STRATEGY_DAY_NAME="${WEEK_CLOSE_DAY_NAME:-$STRATEGY_DAY_NAME}"
 case "${STRATEGY_DAY_NAME:-monday}" in
   monday)    STRATEGY_DOW=1 ;;
   tuesday)   STRATEGY_DOW=2 ;;

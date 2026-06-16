@@ -12,6 +12,15 @@
 #
 set -e
 
+# Named exit codes (issue #31): improve diagnostics for non-obvious failures.
+EXIT_OK=0
+EXIT_USAGE=1
+EXIT_NETWORK=2
+EXIT_CONFLICT=49
+EXIT_GENERAL=1
+
+trap 'echo "ОШИБКА: update.sh прервался на строке ${LINENO}: ${BASH_COMMAND}" >&2' ERR
+
 VERSION="2.1.0"  # WP-273 Этап 2: Generated runtime architecture (F)
 REPO="TserenTserenov/FMT-exocortex-template" # UPSTREAM-CONST: do not substitute
 BRANCH="main"
@@ -372,13 +381,27 @@ for f in "${UPDATED_FILES[@]}"; do
     APPLIED=$((APPLIED + 1))
 done
 
+# Detect pre-existing nested conflict markers before we propagate merged files.
+# This prevents stacking new 3-way merges on top of unresolved ones (issue #31).
+conflict_marker_files=()
+for cf in "$SCRIPT_DIR/CLAUDE.md" "$WORKSPACE_DIR/CLAUDE.md"; do
+    [ -f "$cf" ] && grep -q '^<<<<<<<' "$cf" && conflict_marker_files+=("$cf")
+done
+if [ "${#conflict_marker_files[@]}" -gt 0 ]; then
+    echo ""
+    echo "ОШИБКА: обнаружены неразрешённые конфликты слияния (вложенные маркеры):"
+    for cf in "${conflict_marker_files[@]}"; do echo "  - $cf"; done
+    echo "  Разрешите их вручную и перезапустите update.sh."
+    exit "$EXIT_CONFLICT"
+fi
+
 # Hard-fail if CLAUDE.md still has conflict markers — skip propagation and commit.
 if [ "$CLAUDE_CONFLICTS" -gt 0 ]; then
     echo ""
     echo "ОШИБКА: CLAUDE.md содержит неразрешённые конфликты слияния."
     echo "  Конфликты обозначены <<<<<<< / ======= / >>>>>>>"
     echo "  Разрешите их вручную в $SCRIPT_DIR/CLAUDE.md и перезапустите update.sh."
-    exit 1
+    exit "$EXIT_CONFLICT"
 fi
 
 # Remove deprecated files

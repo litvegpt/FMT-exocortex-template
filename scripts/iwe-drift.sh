@@ -23,12 +23,14 @@
 
 set -eu
 
-# Detect stat mtime flag once — BSD/macOS uses -f %m, GNU/Linux uses -c %Y.
+# Detect stat mtime flag once — GNU/Linux uses -c %Y, BSD/macOS uses -f %m.
+# NOTE: GNU stat accepts `-f %m` too (it prints the mount point), so we must
+# detect GNU first by testing the flag it supports and BSD does not.
 # Use unquoted $_STAT_FLAG in xargs pipelines (word-split is required for multi-token flags).
-if stat -f %m /dev/null >/dev/null 2>&1; then
-    _STAT_FLAG="-f %m"  # BSD/macOS
-else
+if stat -c %Y /dev/null >/dev/null 2>&1; then
     _STAT_FLAG="-c %Y"  # GNU/Linux
+else
+    _STAT_FLAG="-f %m"  # BSD/macOS
 fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
