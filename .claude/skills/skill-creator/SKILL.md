@@ -6,7 +6,7 @@ description: |
   The skill enforces WP Gate precondition, Routing Gate, IntegrationGate hard-check,
   collects parameters in 4 short steps, generates a scaffold SKILL.md from a template,
   shows a draft, writes files, and reminds about verify-skill.sh.
-version: 0.2.0
+version: 0.3.0
 status: experimental
 layer: L1
 agents: single
