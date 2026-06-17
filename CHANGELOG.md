@@ -47,10 +47,12 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 
 
+
 ## [Unreleased] — обновлено 2026-06-17
 
 ### Added
 
+- `326c460` feat(WP-422): promote 7 skills with C3-fixed step headings (L1)
 - `d2dd196` feat(WP-422/SP1): promote skill iwe-restore to platform (L1)
 - `a3ecd21` feat(skills): promote agent-fault + apply-captures to L1 (WP-422 Ф7 audit)
 - `157f483` feat(agent-trace): promote uploader+recorder hook fixes to platform
@@ -75,6 +77,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- `290d149` fix(wp-7): sanitize author-specific content in template-sync'd files
 - `850c303` fix(wp-7/wpn1): promote create-wp.sh with GOV_REPO parametrization
 - `0f92b40` fix(skill-creator): SKILL.md v0.3.1 — review fixes Critical+High
 - `b653a38` fix(ke-queue-stats): frontmatter parser + support pending and pending-review statuses

@@ -279,6 +279,12 @@
       "path": ".claude/skills/skill-creator/scripts/verify-skill.sh"
     },
     {
+      "path": ".claude/skills/skill-creator/scripts/content-audit.sh"
+    },
+    {
+      "path": ".claude/skills/skill-creator/scripts/batch-fix-skills.py"
+    },
+    {
       "path": ".claude/skills/strategy-session/SKILL.md"
     },
     {
@@ -288,6 +294,12 @@
       "path": ".claude/skills/transcribe/SKILL.md"
     },
     {
+      "path": ".claude/skills/vdv/SKILL.md"
+    },
+    {
+      "path": ".claude/skills/vdv/test_cases.md"
+    },
+    {
       "path": ".claude/skills/verify/SKILL.md"
     },
     {
@@ -295,12 +307,6 @@
     },
     {
       "path": ".claude/skills/verify/verify-pedagogy-subsection.md"
-    },
-    {
-      "path": ".claude/skills/vdv/SKILL.md"
-    },
-    {
-      "path": ".claude/skills/vdv/test_cases.md"
     },
     {
       "path": ".claude/skills/w-reflection/SKILL.md"

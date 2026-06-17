@@ -2,7 +2,7 @@
 # see DP.SC.153
 # НЕ редактировать вручную — перегенерировать через generate-skills-catalog.sh
 #
-generated: 2026-06-17T13:19:04Z
+generated: 2026-06-17T14:07:36Z
 skills_dir: .claude/skills
 
 skills:
@@ -436,7 +436,7 @@ skills:
   - id: skill-creator
     name: "skill-creator"
     description: "|"
-    version: 0.3.0
+    version: 0.3.2
     layer: L1
     status: experimental
     triggers:
