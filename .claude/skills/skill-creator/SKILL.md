@@ -24,8 +24,8 @@ triggers:
 
 # /skill-creator — create an IWE skill
 
-> **Scope:** create a new skill in `.claude/skills/` or `.kimi/skills/`.
-> **Not in scope:** updating an existing skill (edit directly), creating a WP, creating a Pack.
+> **Scope:** create a new skill OR guide an update to an existing skill in `.claude/skills/` or `.kimi/skills/`.
+> **Not in scope:** full re-scaffold without deleting the old `SKILL.md` first (delete manually, then call `/skill-creator` again); creating a WP; creating a Pack.
 > **Role:** ad-hoc content-role «Инженер скиллов»; formalize in Pack if ≥3 skills/year.
 
 ## When to use
@@ -70,6 +70,29 @@ Target path:
 - Claude project: `.claude/skills/<name>/`
 - Kimi project: `.kimi/skills/<name>/`
 - User level: `~/.claude/skills/<name>/` or `~/.kimi/skills/<name>/`
+
+### Step 2.5 — Detect existing skill
+
+Check whether `<target_path>/SKILL.md` already exists.
+
+**If it exists** → switch to update mode. Do NOT re-scaffold. Show the pilot:
+
+```
+Скилл <name> уже существует (версия X.Y.Z).
+Что обновить?
+  [ ] description
+  [ ] slash / phrase triggers
+  [ ] version bump (current: X.Y.Z → new: ?)
+  [ ] algorithm step (add / edit)
+  [ ] bundled resource (add scripts/ references/ assets/)
+  [ ] полный пересоздать → удалите SKILL.md вручную, затем запустите /skill-creator снова
+```
+
+Collect the pilot's choices. Apply changes directly to the existing `SKILL.md` via Edit. Skip Steps 3–6. Proceed to **Step 7** (register + verify).
+
+Version bump rule: bump patch for trigger / description edits; bump minor for algorithm changes; bump major for gate or scope changes.
+
+**If it does not exist** → continue to Step 3 (normal creation flow).
 
 ### Step 3 — IntegrationGate
 
@@ -171,6 +194,9 @@ before the skill is used in practice.
 - Do not put wide phrase triggers like «надо сделать скилл».
 - Run `generate-skills-catalog.sh` after writing files (Step 7) — not before, not manually.
 - Do not make the skill verify itself; use `scripts/verify-skill.sh`.
+- Do not skip `verify-skill.sh` after editing an existing skill — always run it after any update.
+- Do not re-scaffold for minor updates (triggers, description, version bump); use Step 2.5 update mode instead.
+- Do not forget version bump when changing gates, scope, or algorithm steps (bump minor or major).
 
 ## Verification
 
