@@ -258,8 +258,8 @@ if [ -x "$RUNTIME_RUNNER" ]; then
 fi
 rm -f "$TEST_FMT_PROMPT"
 
-# === Test 6d: cleanup-processed-notes.py читает GOVERNANCE_REPO из env (R6.1* regression) ===
-echo "[6d] cleanup-processed-notes.py резолвит GOVERNANCE_REPO из env (R6.1* regression)..."
+# === Test 6e: cleanup-processed-notes.py читает GOVERNANCE_REPO из env (R6.1* regression) ===
+echo "[6e] cleanup-processed-notes.py резолвит GOVERNANCE_REPO из env (R6.1* regression)..."
 PY_RESULT=$(IWE_WORKSPACE="$TEST_WS" IWE_GOVERNANCE_REPO=DS-pilot-strategy \
     python3 -c "
 import sys, importlib.util
@@ -457,7 +457,7 @@ fi
 echo "[8c] setup.sh step 5: source ~/.iwe-paths перед role install.sh..."
 # Берём блок между "Installing roles" и первым вызовом install.sh
 STEP5_BLOCK=$(awk '/\[5\/6\] Installing roles/{flag=1} flag; flag && /bash.*install\.sh/{exit}' "$SETUP_SH")
-if echo "$STEP5_BLOCK" | grep -qE '(\.|source)[[:space:]]+"?\$HOME/\.iwe-paths|export[[:space:]]+IWE_RUNTIME'; then
+if echo "$STEP5_BLOCK" | grep -qE '(\.|source)[[:space:]]+"?\$(HOME|WORKSPACE_DIR)/\.iwe-paths|export[[:space:]]+IWE_RUNTIME'; then
     pass "setup.sh step 5: env для install.sh подготовлен (source .iwe-paths или export IWE_RUNTIME)"
 else
     fail "setup.sh step 5: install.sh вызывается БЕЗ IWE_RUNTIME (legacy mode → fail-fast у пользователя)"

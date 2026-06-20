@@ -23,18 +23,19 @@
 
 set -eu
 
-# Detect stat mtime flag once — BSD/macOS uses -f %m, GNU/Linux uses -c %Y.
-# format-check (not exit-check): busybox stat may exit 0 with "Inodes: ..." instead of mtime.
-# || true: stat -f may exit 1 on GNU/Linux; we check output format, not exit code.
-_probe=$(stat -f %m /dev/null 2>/dev/null || true)
-if [[ "$_probe" =~ ^[0-9]+$ ]]; then
-    STAT_MTIME_FLAGS=(-f %m)  # BSD/macOS
+# Detect stat mtime flag once — GNU/Linux uses -c %Y, BSD/macOS uses -f %m.
+# NOTE: GNU stat accepts `-f %m` too (it prints the mount point), so we must
+# detect GNU first by testing the flag it supports and BSD does not.
+# Use unquoted $_STAT_FLAG in xargs pipelines (word-split is required for multi-token flags).
+if stat -c %Y /dev/null >/dev/null 2>&1; then
+    _STAT_FLAG="-c %Y"  # GNU/Linux
 else
-    STAT_MTIME_FLAGS=(-c %Y)  # GNU/Linux
+    _STAT_FLAG="-f %m"  # BSD/macOS
 fi
-unset _probe
 
-IWE_ROOT="${IWE_ROOT:-$HOME/IWE}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=/dev/null
+source "$SCRIPT_DIR/../.claude/lib/iwe-env-bootstrap.sh" || exit 1
 MANIFEST="${MANIFEST:-$IWE_ROOT/.claude/sync-manifest.yaml}"
 MODE="all"
 TOP_N=0
@@ -65,7 +66,8 @@ mtime_days_ago() {
         return
     fi
     local mtime
-    mtime=$(stat "${STAT_MTIME_FLAGS[@]}" "$path")
+    # shellcheck disable=SC2086  # $_STAT_FLAG intentionally unquoted (multi-token flag)
+    mtime=$(stat $_STAT_FLAG "$path")
     local now
     now=$(date +%s)
     echo $(( (now - mtime) / 86400 ))
@@ -79,8 +81,9 @@ dir_newest_mtime_days_ago() {
         return
     fi
     local newest
+    # shellcheck disable=SC2086  # $_STAT_FLAG intentionally unquoted (multi-token flag)
     newest=$(find "$dir" -type f -not -path '*/.git/*' -print0 2>/dev/null \
-        | xargs -0 stat "${STAT_MTIME_FLAGS[@]}" 2>/dev/null \
+        | xargs -0 stat $_STAT_FLAG 2>/dev/null \
         | sort -nr | head -1)
     if [ -z "${newest:-}" ]; then
         echo "-1"

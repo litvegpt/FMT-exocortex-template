@@ -41,6 +41,10 @@ for arg in "$@"; do
     esac
 done
 SCRIPTS_DIR="${SCRIPTS_DIR:-$(dirname "$0")}"
+if [ ${#FILES[@]} -eq 0 ] && [ ! -d "$SCRIPTS_DIR" ]; then
+    echo "validate-fmt-scripts: SCRIPTS_DIR должна быть директорией: $SCRIPTS_DIR" >&2
+    exit 1
+fi
 FMT_ROOT="$(cd "$SCRIPTS_DIR/.." && pwd)"
 AUTHOR_HOME="${HOME}"
 AUTHOR_GOV_REPO="${IWE_GOVERNANCE_REPO:-DS-strategy}"

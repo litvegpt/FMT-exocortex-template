@@ -10,6 +10,11 @@
 # Hook protocol-artifact-validate.sh уже проверяет 11 обязательных секций;
 # Ф3 добавит проверку отсутствия PENDING перед commit.
 #
+# INVARIANT: ни одна render_*() функция не делает silent skip.
+# При отключённой секции — всегда выводить явный статус в формате:
+#   > `flag: false` в `config-file` — секция выключена. Нет данных.
+# Нарушение = пропуск секции в DayPlan без объяснения причины.
+#
 # Использование:
 #   bash day-open-scaffold.sh [YYYY-MM-DD] > "${IWE_GOVERNANCE_REPO:-DS-strategy}/current/DayPlan YYYY-MM-DD.md"
 #   bash day-open-scaffold.sh                    # дата = сегодня
@@ -19,7 +24,10 @@
 
 set -uo pipefail
 
-IWE="${IWE_ROOT:-$HOME/IWE}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=/dev/null
+source "$SCRIPT_DIR/../.claude/lib/iwe-env-bootstrap.sh" || exit 1
+IWE="$IWE_ROOT"
 DATE="${1:-$(date +%Y-%m-%d)}"
 CONFIG="$IWE/${IWE_GOVERNANCE_REPO:-DS-strategy}/exocortex/day-rhythm-config.yaml"
 SERVER_MODE="${IWE_SERVER_MODE:-0}"  # WP-283: 1 = Linux server, Mac-only MCP недоступен
@@ -81,10 +89,99 @@ except Exception:
 " 2>/dev/null
 }
 
+# --- Deterministic context extractors (WP-7 DAP: strategy + day-close) ---
+extract_day_close_carry_over() {
+  local yday="$1"
+  local sessions_dir="$IWE/${IWE_GOVERNANCE_REPO:-DS-strategy}/sessions"
+  local month="${yday:0:7}"
+  local carry_over=""
+
+  # 1. Peer-session day-close report.md
+  local dc_report
+  dc_report=$(find "$sessions_dir/$month" -maxdepth 2 -type f -name "report.md" 2>/dev/null | grep -F "${yday}-" | grep -F "day-close" | head -1)
+  if [ -z "$dc_report" ]; then
+    dc_report=$(find "$sessions_dir/$month" -maxdepth 1 -type f -name "${yday}-day-close.md" 2>/dev/null | head -1)
+  fi
+  if [ -n "$dc_report" ] && [ -f "$dc_report" ]; then
+    carry_over=$(awk '
+      /^## [0-9]+\. Открытые вопросы/ || /^## Открытые вопросы/ { found=1; next }
+      /^## [0-9]+\. / && found { exit }
+      /^## / && found && !(/^## [0-9]+\. Открытые вопросы/ || /^## Открытые вопросы/) { exit }
+      found { print }
+    ' "$dc_report" | sed '/^$/d' | head -20)
+    if [ -n "$carry_over" ]; then
+      echo "$carry_over"
+      return 0
+    fi
+  fi
+
+  # 2. Yesterday DayPlan archive: section "Завтра начать с"
+  local ydayplan="$IWE/${IWE_GOVERNANCE_REPO:-DS-strategy}/archive/day-plans/DayPlan ${yday}.md"
+  if [ -f "$ydayplan" ]; then
+    carry_over=$(awk '
+      /Завтра начать с/ { found=1; next }
+      found && /^## / { exit }
+      found && /^<\/details>/ { exit }
+      found { print }
+    ' "$ydayplan" | sed '/^$/d' | head -10)
+    if [ -n "$carry_over" ]; then
+      echo "$carry_over"
+      return 0
+    fi
+  fi
+
+  echo "нет (Day Close за $yday не найден)"
+}
+
+extract_strategy_context() {
+  local week_num="$1"
+  local sessions_dir="$IWE/${IWE_GOVERNANCE_REPO:-DS-strategy}/sessions"
+  local strategy_file=""
+
+  # 1. Strategy session markdown in current month
+  local month_dir
+  month_dir=$(ls -d "$sessions_dir"/"$(date +%Y-%m)" 2>/dev/null | head -1)
+  if [ -n "$month_dir" ] && [ -d "$month_dir" ]; then
+    strategy_file=$(find "$month_dir" -maxdepth 1 -type f -iname "*strategy*W${week_num}*.md" 2>/dev/null | sort | tail -1)
+    if [ -z "$strategy_file" ]; then
+      strategy_file=$(find "$month_dir" -maxdepth 1 -type f -iname "*strategy*.md" 2>/dev/null | sort | tail -1)
+    fi
+  fi
+
+  if [ -n "$strategy_file" ] && [ -f "$strategy_file" ]; then
+    local priorities
+    priorities=$(awk '
+      /^## Приоритеты/ { found=1; next }
+      /^## / && found { exit }
+      found { print }
+    ' "$strategy_file" | sed '/^$/d' | head -15)
+    if [ -n "$priorities" ]; then
+      echo "$priorities"
+      return 0
+    fi
+  fi
+
+  # 2. Fallback: extract TOS lines from WeekPlan
+  local weekplan
+  weekplan=$(ls "$IWE/${IWE_GOVERNANCE_REPO:-DS-strategy}/current"/WeekPlan\ W"${week_num}"*.md 2>/dev/null | head -1)
+  if [ -n "$weekplan" ] && [ -f "$weekplan" ]; then
+    local tos
+    tos=$(grep -E "^\s*[-*]\s*(П[0-9]+|ТОС)" "$weekplan" 2>/dev/null | head -10)
+    if [ -n "$tos" ]; then
+      echo "$tos"
+      return 0
+    fi
+  fi
+
+  echo "не найден"
+}
+
 # --- Strategy_day guard (Ф6 WP-264) ---
 # Если сегодня strategy_day → не генерировать DayPlan (SKILL.md шаг 4).
 # Возвращает exit 2; extension обрабатывает этот код и выводит сообщение Claude.
 STRATEGY_DAY_NAME=$(read_yaml "day_open.strategy_day" || true)
+WEEK_CLOSE_DAY_NAME=$(read_yaml "day_open.week_close_day" || true)
+STRATEGY_DAY_NAME="${WEEK_CLOSE_DAY_NAME:-$STRATEGY_DAY_NAME}"
 case "${STRATEGY_DAY_NAME:-monday}" in
   monday)    STRATEGY_DOW=1 ;;
   tuesday)   STRATEGY_DOW=2 ;;
@@ -114,7 +211,7 @@ render_video() {
   local enabled
   enabled=$(read_yaml "video.enabled")
   if [ "$enabled" != "True" ]; then
-    echo "*video.enabled = false → пропущено*"
+    echo "> \`video.enabled: false\` в \`day-rhythm-config.yaml\` — секция выключена. Нет данных."
     return
   fi
   local dirs=("$HOME/Documents/Zoom" "$HOME/Documents/Телемост" "$HOME/Видеозаписи Телемост")
@@ -132,11 +229,15 @@ render_video() {
   fi
 }
 
-# DOC5/DOC10 (WP-7): секция «Мир» рендерится только при news.enabled: true.
-# При false — секция опускается ЦЕЛИКОМ (не «нет данных», не «выключено»). Включит флаг → вернётся.
+# DOC5/DOC10 (WP-7): секция «Мир» рендерится ВСЕГДА.
+# При news.enabled: false — секция содержит явное «выключено», не опускается.
+# При true — данные из server-news.sh или PENDING-маркеры.
 render_world() {
   local enabled
   enabled=$(read_yaml "news.enabled")
+  # DOC5/DOC10 (WP-7): секция «Мир» рендерится только при news.enabled: true.
+  # Сознательно выключено (news.enabled: false) → секция опускается ЦЕЛИКОМ (не «нет данных», не «выключено»).
+  # no-silent-skip остаётся для ПОЛОМОК (включено, но server-news.sh упал) — см. PENDING-блок ниже.
   [ "$enabled" != "True" ] && return 0
   echo "<details>"
   echo "<summary><b>Мир</b></summary>"
@@ -177,7 +278,18 @@ render_bot_qa() {
     echo "| Urgent | нет данных |"
   fi
   echo
-  echo "<!-- PENDING: smoke-tests — N passed/failed (если запущены до commit) -->"
+  # Шаг 5 SKILL: core smoke синхронно. Раньше оставлялся PENDING-placeholder (bug-2026-06-12).
+  local smoke_script="$IWE/${IWE_GOVERNANCE_REPO:-DS-strategy}/scripts/day-open-smoke.sh" smoke_json
+  if [ -f "$smoke_script" ]; then
+    smoke_json=$(bash "$smoke_script" 2>/dev/null)
+    if [ -n "$smoke_json" ]; then
+      echo "**Smoke-tests:** \`$smoke_json\`"
+    else
+      echo "**Smoke-tests:** скрипт вернул пусто — проверить \`$smoke_script\`"
+    fi
+  else
+    echo "**Smoke-tests:** скрипт не найден (\`$smoke_script\`)"
+  fi
 }
 
 # --- Section: Новые задачи в репозиториях (issue sweep, 2 дня) ---
@@ -223,6 +335,30 @@ render_repo_issues() {
     printf "%b" "$out" | tee "$cache"
   else
     echo "Новых задач за 2 дня нет. Зависших (stale-unattended) тоже нет." | tee "$cache"
+  fi
+}
+
+# --- Section: Обзор активности по всем репо (коммиты, 2 дня) — WP-5 Ф 2026-06-11 П2 ---
+# Дополняет issue-sweep: что менялось в каждом репо (включая Шаблон IWE / FMT),
+# а не только новые issues. Сигнал «где шла работа» для плана дня/недели.
+render_repo_activity() {
+  local since out="" any=0 repo slug n last
+  since=$(date -v-2d +%Y-%m-%d 2>/dev/null || date -d "2 days ago" +%Y-%m-%d 2>/dev/null)
+  [ -z "$since" ] && { echo "_не удалось вычислить дату фильтра — пропуск._"; return; }
+  out="| Репозиторий | Коммитов (2д) | Последний |\n|---|---|---|\n"
+  for repo in "$IWE"/*/; do
+    [ -d "${repo}.git" ] || continue
+    slug=$(basename "$repo")
+    n=$(git -C "$repo" log --since="$since 00:00:00" --oneline 2>/dev/null | wc -l | tr -d ' ')
+    [ "${n:-0}" -eq 0 ] && continue
+    last=$(git -C "$repo" log -1 --format='%s' 2>/dev/null | cut -c1-50)
+    out="${out}| ${slug} | ${n} | ${last} |\n"
+    any=1
+  done
+  if [ "$any" = "1" ]; then
+    printf "%b" "$out"
+  else
+    echo "Активности в репозиториях за 2 дня нет."
   fi
 }
 
@@ -442,6 +578,29 @@ render_scout() {
   fi
 }
 
+# --- Section: KE-очередь (отчёты на разбор) ---
+# Считает extraction-reports со status: pending-review. Якорь '^status:' обязателен:
+# без него grep ловит упоминания статуса в теле отчётов (cross-batch ID awareness, баг-файлы)
+# и инфлейтит счёт. Выводит ИМЕНА файлов, не только число — самопроверка для пилота.
+# SLA на разбор — ≤24ч (DP.SC.004). Заменил ручной <!-- PENDING -->, где 10.06.2026
+# проскользнул ложный «0 pending-review» при реально висящем отчёте (bug-2026-06-10-ke-queue-drift).
+render_ke_candidates() {
+  local dir="$IWE/${IWE_GOVERNANCE_REPO:-DS-strategy}/inbox/extraction-reports"
+  local files
+  files=$(grep -l -- '^status:[[:space:]]*pending-review' "$dir"/*.md 2>/dev/null)
+  if [ -z "$files" ]; then
+    echo "> Очередь чиста — 0 отчётов ожидают разбора."
+    return
+  fi
+  local count
+  count=$(printf '%s\n' "$files" | grep -c . )
+  echo "> **$count ожидают разбора** (SLA ≤24ч, DP.SC.004) → запустить /apply-captures"
+  echo
+  printf '%s\n' "$files" | while read -r f; do
+    [ -n "$f" ] && echo "- \`$(basename "$f")\`"
+  done
+}
+
 # --- Section: Итоги вчера (commits stats + sessions) ---
 render_yesterday() {
   local total=0 repos=0
@@ -456,14 +615,27 @@ render_yesterday() {
   done
   echo "**Коммиты:** $total в $repos репо | **РП закрыто:** <!-- PENDING: count из git log + WeekPlan -->"
   echo
-  # Sessions consolidation (DAP1-B, WP-7): включить сессии вчерашнего дня
-  local sessions_file="$IWE/${IWE_GOVERNANCE_REPO:-DS-strategy}/current/sessions-today.md"
-  if [ -f "$sessions_file" ]; then
-    # Проверяем что файл относится ко вчера (не старый)
-    local file_date
-    file_date=$(grep -m1 'sessions-today:' "$sessions_file" 2>/dev/null | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}' || echo "")
-    if [ "$file_date" = "$YDAY" ]; then
-      tail -n +2 "$sessions_file" | grep -v '^<!--'
+  # Sessions consolidation (DAP1-B/1-C, WP-7): включить РП сессий вчерашнего дня
+  local day_report_file="$IWE/${IWE_GOVERNANCE_REPO:-DS-strategy}/current/DayReport-${YDAY}.md"
+  if [ -f "$day_report_file" ]; then
+    grep "^| " "$day_report_file" | grep -v "^| РП\|^| Время\|^|---" | sed 's/^/- /'
+  else
+    # Fallback: сканировать sessions напрямую за вчера если DayReport отсутствует
+    local sessions_dir="$IWE/${IWE_GOVERNANCE_REPO:-DS-strategy}/sessions"
+    local found=0
+    for session_dir in "$sessions_dir/${YDAY:0:7}"/${YDAY}-*/; do
+      [ -d "$session_dir" ] || continue
+      if [ -f "$session_dir/meta.yaml" ]; then
+        local wp_id
+        wp_id=$(python3 -c "import yaml; d=yaml.safe_load(open('$session_dir/meta.yaml')); print(d.get('task_id','') or '')" 2>/dev/null)
+        if [ -n "$wp_id" ]; then
+          echo "- $wp_id"
+          found=1
+        fi
+      fi
+    done
+    if [ "$found" = "0" ]; then
+      echo "_Нет сессий за вчера_"
     fi
   fi
   echo
@@ -516,6 +688,10 @@ render_compact_dashboard() {
 SWEEP_WP_LIST=$(bash "$IWE/scripts/active-wp-sweep.sh" "$IWE/${IWE_GOVERNANCE_REPO:-DS-strategy}/inbox" "$IWE" 2>/dev/null \
   | grep -oE '\*\*WP-[0-9]+\*\*' | tr -d '*' | tr '\n' ' ' | sed 's/  */ /g' || true)
 
+# --- Deterministic context injection (WP-7 DAP) ---
+DAY_CLOSE_CARRY_OVER=$(extract_day_close_carry_over "$YDAY" | sed 's/^/  /')
+STRATEGY_CONTEXT=$(extract_strategy_context "$WEEK_NUM" | sed 's/^/  /')
+
 # --- Output ---
 cat <<EOF
 ---
@@ -539,9 +715,12 @@ $(bash "$IWE/scripts/active-wp-sweep.sh" "$IWE/${IWE_GOVERNANCE_REPO:-DS-strateg
 <details open>
 <summary><b>План на сегодня</b></summary>
 
-<!-- PENDING: today_plan — синтез из WeekPlan W$WEEK_NUM (carry-over из Day Close + in_progress РП + budget_spread). Применить mandatory_daily_wps + daily_checkpoint_wps из day-rhythm-config.yaml. KE-строка: bash $IWE/${IWE_GOVERNANCE_REPO:-DS-strategy}/scripts/ke-queue-stats.sh --dayplan-row (реальный бюджет, не литерал «1h»).
+<!-- PENDING: today_plan — синтез таблицы из WeekPlan W$WEEK_NUM + JSON-фактов WP. Применить mandatory_daily_wps + daily_checkpoint_wps из day-rhythm-config.yaml. KE-строка: bash $IWE/${IWE_GOVERNANCE_REPO:-DS-strategy}/scripts/ke-queue-stats.sh --dayplan-row (реальный бюджет, не литерал «1h»).
 Active WPs to include (из sweep + WeekPlan union): $SWEEP_WP_LIST
 -->
+
+**Стратегические приоритеты (из Strategy Session W${WEEK_NUM}):**
+${STRATEGY_CONTEXT:-не найдены}
 
 | 🚦 | # | РП | h | Статус | Результат |
 |----|---|-----|---|--------|-----------|
@@ -552,7 +731,8 @@ Active WPs to include (из sweep + WeekPlan union): $SWEEP_WP_LIST
 
 **Mandatory check:** WP-7 (техдолг бота, ≥30 мин) + ≥1 контентный РП — <!-- PENDING: проверить наличие в плане -->
 
-**Carry-over из Day Close вчера:** <!-- PENDING: цитата секции «Завтра начать с» из вчерашнего DayPlan; если первый день — написать «нет (первый день)» -->
+**Carry-over из Day Close вчера ($YDAY):**
+${DAY_CLOSE_CARRY_OVER:-нет (Day Close не найден)}
 
 </details>
 
@@ -602,6 +782,10 @@ $(render_iwe_status)
 
 $(render_repo_issues)
 
+**Активность по репозиториям (за 2 дня, включая Шаблон IWE):**
+
+$(render_repo_activity)
+
 </details>
 
 <details>
@@ -617,7 +801,7 @@ $(render_scout)
 <details>
 <summary><b>📚 KE-кандидаты (Knowledge Extraction)</b></summary>
 
-<!-- PENDING: ke_candidates — bash: grep -rl "status: pending-review" ${IWE_GOVERNANCE_REPO:-DS-strategy}/inbox/extraction-reports/ | wc -l. Если 0 → удалить секцию. Если >0 → таблица файлов + SLA DP.SC.004 ≤24ч → запустить /apply-captures -->
+$(render_ke_candidates)
 
 </details>
 
