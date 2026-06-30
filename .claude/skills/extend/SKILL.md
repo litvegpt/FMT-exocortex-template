@@ -25,8 +25,8 @@ routing:
 ### 2. Показать текущее состояние кастомизаций
 
 ```bash
-ls /home/evgeny/Github/extensions/*.md 2>/dev/null || echo "(нет расширений)"
-cat /home/evgeny/Github/params.yaml 2>/dev/null
+ls {{WORKSPACE_DIR}}/extensions/*.md 2>/dev/null || echo "(нет расширений)"
+cat {{WORKSPACE_DIR}}/params.yaml 2>/dev/null
 ```
 
 Сообщить:
