@@ -1,7 +1,7 @@
 # Установка IWE: пошаговое руководство
 
 > Это руководство проведёт тебя от чистого компьютера до работающего IWE за 30-60 минут.
-> Подходит для macOS. Linux и Windows (WSL) — см. примечания в каждом шаге.
+> Подходит для macOS, Linux и Windows (через Git Bash — WSL не обязателен) — см. примечания в каждом шаге.
 > Не уверен, что нужно менять под твою платформу? → **[PORTABILITY.md](PORTABILITY.md)**
 >
 > **Source-of-truth:** `DP.IWE.002` (Pack). При расхождении с этим файлом — приоритет у Pack.
@@ -57,8 +57,8 @@
 - Или: Finder → Программы → Утилиты → Терминал
 
 **Windows:**
-- Сначала установи [WSL](https://learn.microsoft.com/ru-ru/windows/wsl/install) (Windows Subsystem for Linux)
-- Потом открой: Пуск → набери `Ubuntu` → нажми Enter
+- Установи [Git for Windows](https://git-scm.com/download/win) (галочки по умолчанию подходят)
+- Открой **Git Bash** — Пуск → набери `Git Bash` → нажми Enter. WSL не обязателен, подробности → [§ 0.0 «Windows: без WSL»](#00-windows-без-wsl)
 
 **Linux:**
 - `Ctrl + Alt + T` (в большинстве дистрибутивов)
@@ -68,6 +68,21 @@
 ## Этап 0: Подготовка (15-20 мин)
 
 Если у тебя уже установлены Git, Node.js, GitHub CLI и Claude Code CLI — переходи к [Этапу 1](#этап-1-установка-iwe-5-мин).
+
+### 0.0 Windows: без WSL
+
+WSL **не обязателен**. Ядро IWE — обычные bash-скрипты (`setup.sh` и другие), а bash на Windows приносит с собой **Git for Windows** — устанавливать WSL только ради этого не нужно.
+
+1. **Git for Windows** — скачай с [git-scm.com](https://git-scm.com/download/win) и установи (галочки по умолчанию подходят). Вместе с ним ставится **Git Bash** — терминал с bash, в котором работают все команды этого руководства.
+2. **Все шаги Этапа 0 и Этапа 1** (Node.js, GitHub CLI, Claude Code CLI, `setup.sh`) выполняй **из Git Bash**, не из PowerShell/cmd — команды с `curl`, `xcode-select` и т.п. в PowerShell не заработают.
+   - Node.js — установщик с [nodejs.org](https://nodejs.org/) (LTS-версия).
+   - GitHub CLI — установщик с [cli.github.com](https://cli.github.com/) или `winget install --id GitHub.cli` (можно из обычного PowerShell, ставится системно).
+   - Claude Code CLI — та же команда `npm install -g @anthropic-ai/claude-code`, что и на macOS/Linux (Git Bash уже умеет `npm`, если Node.js на PATH).
+3. **Автоматические хуки Claude Code** (пре/пост-commit и т.п.) вызывают `.sh`-файлы через системный shell — на Windows это сработает, только если `bash` (из Git for Windows) есть в системном `PATH`. Установщик Git for Windows обычно добавляет его сам; если хуки не срабатывают — проверь `where bash` в cmd.
+4. **Локальная автоматика (Стратег/Экстрактор без участия человека)** — на Windows нет `launchd`/`systemd`; ближайший аналог — Планировщик заданий Windows (Task Scheduler, см. пример в разделе [«Автоматическое пробуждение»](#автоматическое-пробуждение-и-предотвращение-сна) ниже). Более простой путь без локальных заданий — облачный вариант через GitHub Actions (не зависит от ОС вообще, ничего не должно быть постоянно включено).
+5. **Если всё же хочешь полноценный Linux** — WSL остаётся рабочим резервным вариантом (`wsl --install` в PowerShell от администратора), просто это уже не обязательное условие для установки IWE.
+
+> **Честная оговорка.** Ни Git Bash, ни WSL как путь установки IWE не проверялись живьём этой командой на реальном Windows (CI-матрица шаблона гоняет только `ubuntu-latest`/`macos-latest`, Windows-раннера нет). Наткнулся на конкретную воспроизводимую поломку именно в Git Bash — заведи [issue в FMT-exocortex-template](https://github.com/TserenTserenov/FMT-exocortex-template/issues), это ценнее, чем гадать заранее.
 
 ### 0.1 Homebrew (только macOS)
 
@@ -649,11 +664,11 @@ bash ~/IWE/FMT-exocortex-template/roles/strategist/scripts/strategist.sh note-re
 # Итоги недели
 bash ~/IWE/FMT-exocortex-template/roles/strategist/scripts/strategist.sh week-review
 
-# Экстрактор: извлечь знания из текущей сессии
-bash ~/IWE/FMT-exocortex-template/roles/extractor/scripts/extractor.sh session-close
+# Экстрактор: извлечь знания из текущей сессии (собранная runtime-копия, не сырой файл в FMT)
+bash "$IWE_RUNTIME/roles/extractor/scripts/extractor.sh" session-close
 
 # Экстрактор: проверить inbox
-bash ~/IWE/FMT-exocortex-template/roles/extractor/scripts/extractor.sh inbox-check
+bash "$IWE_RUNTIME/roles/extractor/scripts/extractor.sh" inbox-check
 
 # Синхронизатор: статус всех задач
 bash ~/IWE/FMT-exocortex-template/roles/synchronizer/scripts/scheduler.sh status
@@ -770,7 +785,7 @@ IWE работает преимущественно локально. Вот ч�
 > **Важно о модели:** Экзокортекс требует от модели сложного агентного поведения — следование многошаговым протоколам, работа с 5-10 файлами одновременно, надёжное редактирование. Рекомендуемые модели: **Claude Opus/Sonnet**, **GPT-4o/o1**, **Gemini 2.5 Pro**. Модели послабее (Qwen, Llama, Mistral) могут терять контекст и пропускать шаги протокола — для обычного кодинга они подходят, но для управления экзокортексом ненадёжны.
 
 **Работает ли на Windows?**
-Через WSL (Windows Subsystem for Linux) — да. [Установи WSL](https://learn.microsoft.com/ru-ru/windows/wsl/install), затем следуй инструкции для Linux. Launchd не работает в WSL — используй cron.
+Да, через Git Bash (ставится вместе с [Git for Windows](https://git-scm.com/download/win)) — WSL не обязателен, подробности → [§ 0.0 «Windows: без WSL»](#00-windows-без-wsl). WSL остаётся вариантом, если нужна локальная cron-подобная автоматика или привычный Linux — тогда следуй инструкции для Linux внутри WSL (launchd там тоже не работает, нужен `systemd`/cron).
 
 **Можно ли без Стратега?**
 Да. Стратег — это автоматизация (утренние планы, ревью). Без него Claude Code + CLAUDE.md + memory/ работают полностью. Планируешь вручную.

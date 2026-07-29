@@ -33,6 +33,13 @@ gates_rationale: "операционный скилл; WP Gate применим 
 
 Peer-сессия DP.SC.154 где Kimi = писатель, Claude = напарник. Запускается простой фразой. Включает ОРЗ Opening и Closing, turn-loop, эскалации, Decision Gate (зафиксировать vs реализовать → ревью → проверить → задеплоить), отложенную финализацию и верификацию.
 
+## Scope boundary — не подменяет решения, зарезервированные за пилотом (найдено 2026-07-07)
+
+> Peer-сессия пригодна для: технических решений, дизайна, code review, поиска компромисса между подходами, подготовки кандидатов к решению.
+> **НЕ пригодна** для решений, которые процесс явно закрепляет за человеком (например, R15 Валидатор в `/apply-captures` — accept/reject/defer кандидатов знания; R1 Стратег — приоритеты месяца). Согласие двух агентов между собой — не решение пилота, даже единогласное и хорошо обоснованное.
+>
+> Если задача внутри пир-сессии требует такого решения — писатель обязан остановиться и спросить пилота напрямую в текущем чате (не через turn-файл), прежде чем фиксировать результат. См. `.claude/skills/apply-captures/SKILL.md` раздел «R15 = живой пилот, не агент» и `${IWE_GOVERNANCE_REPO:-DS-strategy}/inbox/bugs/bug-2026-07-07-r15-decisions-bypassed-pilot.md` — прецедент, из-за которого добавлено это ограничение.
+
 ## Шаг 0. Режим
 
 Определить режим из `$ARGUMENTS`:
@@ -164,9 +171,26 @@ consensus: none
 ### 3.1 Вызов Claude
 
 Прочитать все предыдущие реплики из `SESSION_DIR` в порядке нумерации.
-Составить промпт:
 
-```
+Промпт передаётся **файлом**, не inline. Зачем (bug-2026-06-30-peer-adapter-b77c-block):
+inline-паттерн `echo "<промпт>" | bash adapter.sh` помещает весь текст промпта внутрь
+bash-команды, а хук B7.7c (`secret-leak-block.sh`) сканирует всю строку — случайные
+слова из списка read-инструментов (`cut`, `tr`, `fmt`...) + упоминание `.env`/`.secrets`
+в тексте промпта давали ложный deny на повторных ходах. Файловый вызов оставляет в
+командной строке только пути — хук не срабатывает.
+
+**3.1.а Записать промпт в `${SESSION_DIR}/peer-prompt.md`** (Write).
+Шаблон:
+
+```markdown
+## Открытие (WP Gate)
+
+- Задача: <задача>
+- РП: WP-NNN «<название>» (или: не найден в плане недели)
+- Дата: <TODAY>
+
+---
+
 КРИТИЧНО: Твоя задача — ТОЛЬКО написать одну peer-реплику в stdout с frontmatter.
 Запрещено: редактировать файлы, делать commit, git push, создавать файлы в SESSION_DIR.
 Весь твой ответ = одна реплика в stdout. Ничего больше.
@@ -196,12 +220,13 @@ CONSENSUS: <резюме> — если считаешь что договори�
 ESCALATE_TO_USER: <причина> — если писатель игнорирует существенное возражение
 ```
 
-Вызов Claude через Bash:
+**3.1.б Вызов Claude через Bash** (stdin-редирект из файла):
 ```bash
 PEER_FILE="${SESSION_DIR}/$(printf '%02d' $TURN)-peer.md"
-echo "<промпт>" | bash "$HOME/IWE/${IWE_GOVERNANCE_REPO:-DS-strategy}/scripts/claude-peer-adapter.sh" \
+bash "$HOME/IWE/${IWE_GOVERNANCE_REPO:-DS-strategy}/scripts/claude-peer-adapter.sh" \
   --add-dir "$SESSION_DIR" \
-  2>/dev/null > "$PEER_FILE"
+  < "${SESSION_DIR}/peer-prompt.md" \
+  > "$PEER_FILE" 2>/dev/null
 ```
 
 Если файл пустой или exit ≠ 0 → сообщить пилоту: «Claude не ответил. Повторить или прервать?»
@@ -786,10 +811,17 @@ test "$INDEX_COUNT" -eq 1 \
   || { echo "FAIL: 00-index.md: ожидается 1 запись для $SESSION_ID, найдено $INDEX_COUNT"; exit 1; }
 
 # pathspec после `--`: commit ТОЛЬКО файлы сессии (mis-attribution, 2026-06-20-39)
+# PR flow (WP-436 Ф2): push to feature branch + auto-merge PR → branch protection on main.
 PATHS=("sessions/$MONTH/$SESSION_ID/" "sessions/00-index.md" "sessions/$MONTH/${TODAY}-${SESSION_SLUG}.md")
+BRANCH="peer/$SESSION_ID"
+git checkout -b "$BRANCH" 2>/dev/null || git checkout "$BRANCH"
 git add "${PATHS[@]}"
 git commit -m "feat(peer): $SESSION_ID (kimi-writer) — <задача кратко>" -- "${PATHS[@]}"
-git push
+git push origin "$BRANCH"
+gh pr create --title "feat(peer): $SESSION_ID" \
+  --body "Peer-сессия DP.SC.154. Kimi (writer) + Claude (peer)." \
+  --base main --auto-merge 2>/dev/null \
+  || echo "WARN: gh pr create failed — merge manually or check gh auth"
 ```
 
 Показать пилоту: «Сессия завершена. Отчёт: `sessions/$MONTH/$SESSION_ID/report.md`»

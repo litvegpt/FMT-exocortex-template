@@ -50,6 +50,13 @@ echo ""
 
 # ── helpers ──────────────────────────────────────────────────────────────────
 
+# Cross-platform sed -i (macOS requires empty string argument, GNU does not)
+if sed --version >/dev/null 2>&1; then
+    sed_inplace() { sed -i "$@"; }
+else
+    sed_inplace() { sed -i '' "$@"; }
+fi
+
 # Откат при ошибке
 rollback() {
     local backup_path="${1:-}"
@@ -72,9 +79,11 @@ substitute_file() {
         -e "s|$GOV_REPO_AUTHOR|\${IWE_GOVERNANCE_REPO:-$GOV_REPO_TMPL}|g" \
         -e "s|^layer: L3|layer: L1|" \
         "$file" > "$tmp"
-    # Сохранить права доступа (macOS compatible)
+    # Preserve permissions cross-platform. GNU stat (-c) FIRST: on Linux `stat -f` means
+    # --file-system and succeeds with garbage (not perms), so a BSD-first probe never falls
+    # through to -c there. On macOS `stat -c` fails and falls back to BSD `-f '%Lp'`.
     local mode
-    mode=$(stat -f '%Lp' "$file" 2>/dev/null || stat -c '%a' "$file" 2>/dev/null || echo "644")
+    mode=$(stat -c '%a' "$file" 2>/dev/null || stat -f '%Lp' "$file" 2>/dev/null || echo "644")
     chmod "$mode" "$tmp"
     mv "$tmp" "$file"
 }
@@ -129,7 +138,10 @@ fi
 # ── Шаг 3. Копирование директории ────────────────────────────────────────────
 rm -rf "$DEST"
 mkdir -p "$DEST"
-cp -a "$SRC"/ "$DEST"/
+# "$SRC"/. (not "$SRC"/) so the CONTENTS land in $DEST on both BSD (macOS) and GNU (Linux/CI)
+# cp. With a bare trailing slash GNU cp nests the source as $DEST/<skill>/ when $DEST exists,
+# and the later substitute_file "$DEST/SKILL.md" then fails with "No such file" (CI-only).
+cp -a "$SRC"/. "$DEST"/
 
 # ── Шаг 4. Удаление мусора ───────────────────────────────────────────────────
 find "$DEST" -type f \( \
@@ -140,6 +152,44 @@ find "$DEST" -type f \( \
 
 # ── Шаг 5. Подстановки путей + layer: L1 ─────────────────────────────────────
 substitute_file "$DEST/SKILL.md"
+
+# -- Blank USER-SPACE block content on promote (keep markers, clear inner content)
+if grep -q '^<!-- USER-SPACE -->' "$DEST/SKILL.md" 2>/dev/null; then
+    perl -i -0pe 's/^(<!-- USER-SPACE -->)\n.*?\n(<!-- \/USER-SPACE -->)/$1\n$2/ms' "$DEST/SKILL.md"
+fi
+# -- Ensure USER-SPACE marker exists in L1 SKILL.md (required by validate-fmt-scripts.sh)
+if ! grep -q '^<!-- USER-SPACE -->' "$DEST/SKILL.md" 2>/dev/null; then
+    printf '\n<!-- USER-SPACE -->\n<!-- /USER-SPACE -->\n' >> "$DEST/SKILL.md"
+fi
+# -- Replace install_constants actual values with {{KEY}} placeholders
+IC_BLOCK=$(awk '/^install_constants:/{found=1} found && /^[a-z][^:]+:/ && !/^install_constants:/{exit} found{print}' "$DEST/SKILL.md" 2>/dev/null || true)
+if [ -n "$IC_BLOCK" ]; then
+    while IFS=': ' read -r key val; do
+        key="${key#"${key%%[! ]*}"}"
+        val="${val#"${val%%[! ]*}"}"
+        [[ "$key" =~ ^[A-Z_]+$ ]] && [ -n "$val" ] || continue
+        sed_inplace "s|${val}|{{${key}}}|g" "$DEST/SKILL.md"
+    done <<< "$IC_BLOCK"
+fi
+
+# -- Replace L3-author marker values with {{PLACEHOLDER}} (WP-5 L1/L3-разделение в скиллах)
+# Marker syntax: <!-- L3-author: KEY=value, в шаблоне → {{PLACEHOLDER}} -->
+# Only quoted occurrences ("value") are substituted — a bare value elsewhere in the file
+# (e.g. an illustrative example) is left untouched. Each marker is processed by line number
+# (not `|`-joined fields) because `value` itself may legitimately contain `|`; substitution
+# uses perl \Q..\E (literal quoting) so sed-special characters in `value` can't break the
+# replacement or be misinterpreted. Marker is blanked to a `value`-free resolved form AFTER
+# a successful substitution — if perl fails, the marker stays in its original (catchable) form.
+while IFS=: read -r lineno marker; do
+    [ -n "$lineno" ] || continue
+    key=$(printf '%s' "$marker" | sed -E 's/^<!-- L3-author: ([A-Za-z_][A-Za-z0-9_]*)=.*/\1/')
+    val=$(printf '%s' "$marker" | sed -E 's/^<!-- L3-author: [A-Za-z_][A-Za-z0-9_]*=(.*), в шаблоне → \{\{[A-Za-z0-9_]+\}\} -->$/\1/')
+    placeholder=$(printf '%s' "$marker" | grep -oE '\{\{[A-Za-z0-9_]+\}\}')
+    [ -n "$key" ] && [ -n "$val" ] && [ -n "$placeholder" ] || continue
+    if perl -i -pe 'BEGIN{$v=shift @ARGV; $p=shift @ARGV} s/\Q"$v"\E/"$p"/g' "$val" "$placeholder" "$DEST/SKILL.md"; then
+        sed_inplace -E "s|<!-- L3-author: ${key}=.*, в шаблоне → \{\{[A-Za-z0-9_]+\}\} -->|<!-- L3-author: ${key} was here, replaced with ${placeholder} -->|" "$DEST/SKILL.md"
+    fi
+done < <(grep -noE '<!-- L3-author: [A-Za-z_][A-Za-z0-9_]*=[^,]+, в шаблоне → \{\{[A-Za-z0-9_]+\}\} -->' "$DEST/SKILL.md" 2>/dev/null)
 
 # Подстановки в .sh скрипты скилла (рекурсивно)
 while IFS= read -r -d '' f; do
