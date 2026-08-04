@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+# .githooks/pre-push — WP-436: force-push guard on protected branches.
+#
+# Native git hook, not Claude-Code-only. Complements .claude/hooks/destructive-guard.sh
+# (PreToolUse:Bash), which only sees commands Claude Code itself issues — this hook
+# also catches manual terminal pushes and other agents (Kimi, Hermes) that don't go
+# through that layer.
+#
+# core.hooksPath is per-checkout, not versioned — a fresh/reprovisioned clone
+# silently falls back to the empty default .git/hooks, disabling this guard with
+# no visible signal (found 2026-07-23: force-push incident; self-heal added in
+# day-open-pipeline.sh §1.2). Deletions and pushes of new branches are allowed —
+# only history-rewriting pushes to protected branches are blocked.
+set -euo pipefail
+
+PROTECTED_BRANCHES="${IWE_PROTECTED_BRANCHES:-main master}"
+ZERO_SHA="0000000000000000000000000000000000000000"
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+  [ "$local_sha" = "$ZERO_SHA" ] && continue   # branch deletion
+  [ "$remote_sha" = "$ZERO_SHA" ] && continue  # new branch, nothing to rewrite
+
+  branch="${remote_ref#refs/heads/}"
+  is_protected=false
+  for b in $PROTECTED_BRANCHES; do
+    if [ "$branch" = "$b" ]; then
+      is_protected=true
+      break
+    fi
+  done
+  $is_protected || continue
+
+  if ! git merge-base --is-ancestor "$remote_sha" "$local_sha" 2>/dev/null; then
+    echo "BLOCKED: push перезаписывает историю ветки '$branch' (обнаружен force-push)." >&2
+    echo "  Защищённая ветка — force-push запрещён (CLAUDE.md §2, WP-436)." >&2
+    echo "  Согласуй с владельцем; если действительно нужно — git push --no-verify под свою ответственность." >&2
+    exit 1
+  fi
+done
+
+exit 0

@@ -441,6 +441,9 @@
       "path": ".githooks/pre-commit"
     },
     {
+      "path": ".githooks/pre-push"
+    },
+    {
       "path": ".github/workflows/cloud-scheduler.yml"
     },
     {
