@@ -112,10 +112,41 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 
 
-## [Unreleased] — обновлено 2026-07-28
+
+## [Unreleased] — обновлено 2026-08-03
 
 ### Added
 
+- `e680497` feat(WP-7 Этап 2): контрактные тесты доведены до реально проходящих + rollback create-wp.sh
+
+### Changed
+
+- `867aa5d` docs(wp-452): Ф4 — связь с разделом 7 универсального руководства
+- `8cca208` chore(release): weekly auto-bump to v0.36.3
+- `e48389e` chore(week-close): синхронизация справочника FPF, список hot-файлов, восстановлен исполняемый бит контрактных тестов
+
+### Fixed
+
+- `e65e942` fix(session): quarantine dead-pid semaphores
+- `5b2fd66` fix(strategy-session-weekly): gate status:confirmed on strategy-session-checks-runner.sh (WP-484 Ф47)
+- `f457907` fix(wp7): deliver canonical protocol scripts
+- `1748a6f` fix(WP-7 Этап 2): фикстуры независимы от update.sh, откат сверяется побайтово
+- `945b7f8` fix(day-open): preserve extension hook diagnostics
+- `bb9656d` fix(#346): day-close calendar day follows install timezone, not global UTC
+- `14b4010` fix(#345): explicit non-hook classification for 4 orphan-warning files in .claude/hooks
+- `90d887f` fix(#344): preserve HEAD form across upgrade-simulation smoke rollback
+- `58666a7` fix(WP-7 Этап 2): доставка тестов гейта в манифест + честный smoke-тест setup.sh
+- `3280bef` fix(hindsight): убрать ключ из автозапуска, резолвить docker динамически, curl-healthcheck
+- `7e04b0b` fix(day-close): изоляция кодов возврата реиндексации + различение частичного отказа
+- `8a2e9da` fix(peer): restrict Claude adapter to text-only review
+
+
+## [0.36.3] — 2026-08-02
+
+### Added
+
+- `8ab5386` feat(wp499): Ф16 — доставка iwe-local-gateway в шаблон: setup/optional/setup-local-gateway.sh (клон на пин v0.1.0, сборка, запуск демона, блок для .mcp.json), правка docs/AGENT-VENDOR-SETUP.md (шаг 3.2 больше не ссылается на несуществующую запись), секция в setup/optional/README.md
+- `813dbbf` fix(wp499): Ф16 фиксы по независимому ревью — liveness-проба демона (сокет-файл переживает ребут), lock против гонки двух запусков, скрипт добавлен в update-manifest.json (доставка существующим инсталляциям), workspace из положения скрипта, пин по SHA, проверка версии node
 - `3cd8d01` feat(wp-429-f6.5): пре-фильтры фабрикации ID и cross-report дублей в extractor.sh
 - `9fcc6d9` feat(apply-captures): Ф6.4 фасетный классификатор (шаг 4в-0) + routing.yaml как SoT для 4в
 - `35944f3` feat(wp505): create-wp.sh --state (обязателен при реестре осей) + --hypothesis, ячейка «Ставка»; /wp-new и protocol-open — ставка и гипотеза в ритуале создания РП
@@ -129,6 +160,8 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- `cd92300` fix(wp499): Ф16 хвост — bump iwe-local-gateway пин к v0.1.1 (демон писал pid всегда в ~/.iwe/gateway.pid независимо от кастомного сокета, issue TserenTserenov/iwe-local-gateway#1; фикс портирован в канонический репо, ранее ушёл только в приватный репо-двойник)
+- `7717c76` fix(mcp): утечка личного пути автора в .mcp.json (→ {{HOME_DIR}}) + скилл personal-guide-render указывал на несуществующий инструмент локального шлюза
 - `0873dde` fix: promote day-open-pipeline.sh — facts_digest guard fix (WP-484)
 - `cef6352` fix(hooks): revert WeekPlan section-list gate — broke 23/24 real WeekPlans (issue #318 hotfix)
 - `fe0b908` fix(setup): githooks provisioning for DS-strategy + WeekPlan validator drift (#317, #318)
