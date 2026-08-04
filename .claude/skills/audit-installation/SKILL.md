@@ -237,4 +237,75 @@ Coverage: N/4
 - **Sentinel sticky-state** — защита: TTL 10 мин в хуке + Stop-cleanup. Edge case: если хук изменён и не читает sentinel → блокировки не будет (fail-open). Защита: периодический re-test `/audit-installation` ловит регрессию.
 
 <!-- USER-SPACE -->
+## Шаг 6. Orphan-файлы платформы (авторское расширение)
+
+> **Почему:** `update.sh` Step 6f детектирует L1-файлы, не перечисленные в `update-manifest.json`, но только предупреждением внутри полного прогона апдейта — без отдельного ревью такие файлы копятся месяцами незамеченными (найдено: `.claude/skills/diagnose-iwe/` — дубликат `diagnose`, провисел с июня 2026 до находки 2026-08-04).
+
+Найти FMT-клон той же fallback-цепочкой, что и в Шаге 1 (`AUDIT_SCRIPT` → его директория-родитель — корень FMT):
+
+```bash
+if [ -f "$HOME/IWE/scripts/iwe-audit.sh" ]; then
+    FMT_DIR="$HOME/IWE"
+elif [ -n "${IWE_SCRIPTS:-}" ] && [ -f "$IWE_SCRIPTS/iwe-audit.sh" ]; then
+    FMT_DIR="$(dirname "$IWE_SCRIPTS")"
+else
+    FMT_DIR=""
+fi
+
+if [ -n "$FMT_DIR" ] && [ -f "$FMT_DIR/update-manifest.json" ] && command -v python3 &>/dev/null; then
+    ORPHAN_OUTPUT=$(python3 - "$FMT_DIR" <<'PYEOF'
+import json, os, sys
+
+fmt_dir = sys.argv[1]
+manifest_path = os.path.join(fmt_dir, "update-manifest.json")
+
+with open(manifest_path) as f:
+    manifest = json.load(f)
+
+def _path(e): return e["path"] if isinstance(e, dict) else e
+known = {_path(e) for e in manifest.get("files", [])}
+deprecated = {_path(e) for e in manifest.get("deprecated_files", [])}
+all_known = known | deprecated
+
+local_manifest_path = os.path.join(fmt_dir, "update-manifest.local.json")
+local_excluded = []
+if os.path.isfile(local_manifest_path):
+    try:
+        with open(local_manifest_path) as f:
+            local_excluded = [_path(e) for e in json.load(f).get("excluded_paths", [])]
+    except (json.JSONDecodeError, TypeError):
+        pass
+
+def _locally_excluded(rel):
+    return any(rel == e.rstrip("/") or rel.startswith(e.rstrip("/") + "/")
+               for e in local_excluded)
+
+L1_DIRS = [".claude/hooks", ".claude/rules", ".claude/skills"]
+
+orphans = []
+for base in L1_DIRS:
+    full_base = os.path.join(fmt_dir, base)
+    if not os.path.isdir(full_base):
+        continue
+    for root, dirs, files in os.walk(full_base):
+        for fname in files:
+            full = os.path.join(root, fname)
+            rel = os.path.relpath(full, fmt_dir)
+            if rel not in all_known and not _locally_excluded(rel):
+                tag = "[maybe-L3]" if "extensions/" in rel else "[orphan]"
+                orphans.append((tag, rel))
+
+for tag, rel in sorted(orphans):
+    print(f"{tag} {rel}")
+PYEOF
+)
+fi
+```
+
+Добавить в отчёт секцию `## 7. Orphan-файлы платформы`:
+- Пусто → «✅ orphan-файлов не найдено».
+- Есть `[orphan]` строки → перечислить, пометить ⚠️ (не критично, но требует решения пилота: удалить / зарегистрировать в `deprecated_files` / оставить намеренно через `update-manifest.local.json`). Не удалять автоматически.
+- Есть `[maybe-L3]` строки → не эскалировать (ожидаемо — пользовательское расширение в `extensions/`).
+
+Передать секцию 7 Аудитору (Шаг 4) вместе с остальным отчётом — `[orphan]` находки считать как minor gap, не critical.
 <!-- /USER-SPACE -->
