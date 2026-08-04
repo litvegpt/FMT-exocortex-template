@@ -50,19 +50,7 @@ pairs:
     owner_role: agent
     symptom: "Day Open работает не по protocol-open.md"
 
-  # 2. Staging ↔ FMT (валидированные правила должны быть промотированы)
-  - id: staging-validated-to-fmt
-    source: STAGING.md
-    derived: FMT-exocortex-template/
-    relation: reconciliation
-    check: mtime-lag
-    threshold_days: 7
-    critical_days: 21
-    owner_role: human
-    symptom: "Правило `validated` в STAGING.md не промотировано в FMT более 3 недель"
-    notes: "Если у вас нет локального FMT-зеркала — пара бесполезна, удалите."
-
-  # 3. ARCH-якорь ↔ downstream `derived_from:` (helper из scripts/iwe-drift-helpers/)
+  # 2. ARCH-якорь ↔ downstream `derived_from:` (helper из scripts/iwe-drift-helpers/)
   - id: arch-version-drift
     source: <Pack-репо>/02-domain-entities/
     derived: <Pack-репо>/
@@ -74,7 +62,7 @@ pairs:
     symptom: "ARCH-документ обновлён (bump version), но downstream-документы с `derived_from: <ID>@vX.Y` не пересмотрены"
     notes: "Helper извлекает `version:` из ARCH-frontmatter и ищет несовпадения в downstream `derived_from:` якорях. Требует явных `version: vX.Y` в frontmatter каждого ARCH-документа. Если у вас нет ARCH-документов с derived_from-якорями — пара бесполезна, удалите."
 
-  # 4. WP-status легенда (REGISTRY) ↔ format-compliance таблицы (helper из scripts/iwe-drift-helpers/)
+  # 3. WP-status легенда (REGISTRY) ↔ format-compliance таблицы (helper из scripts/iwe-drift-helpers/)
   - id: wp-status-legend-drift
     source: <Governance-репо>/docs/WP-REGISTRY.md
     derived: <Governance-репо>/docs/WP-REGISTRY.md
