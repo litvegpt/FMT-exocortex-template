@@ -50,7 +50,16 @@ pairs:
     owner_role: agent
     symptom: "Day Open работает не по protocol-open.md"
 
-  # 2. ARCH-якорь ↔ downstream `derived_from:` (helper из scripts/iwe-drift-helpers/)
+  # 2. (issue #404) staging-validated-to-fmt пара удалена отсюда 2026-08-12:
+  #    её source (STAGING.md) — авторская инфраструктура обкатки (CLAUDE.md §8),
+  #    не поставляется пользовательской установкой шаблона. Пара безусловно
+  #    получала status=missing (mtime-lag не различает "источника нет и не
+  #    будет" от "источник реально пропал") на каждой не-авторской установке
+  #    навсегда — не намеренная задержка. Автору, кто ведёт STAGING.md,
+  #    эквивалентный трекинг — через собственный `author_mode` манифест,
+  #    не общий шипящийся файл.
+
+  # 3. ARCH-якорь ↔ downstream `derived_from:` (helper из scripts/iwe-drift-helpers/)
   - id: arch-version-drift
     source: <Pack-репо>/02-domain-entities/
     derived: <Pack-репо>/
@@ -62,7 +71,7 @@ pairs:
     symptom: "ARCH-документ обновлён (bump version), но downstream-документы с `derived_from: <ID>@vX.Y` не пересмотрены"
     notes: "Helper извлекает `version:` из ARCH-frontmatter и ищет несовпадения в downstream `derived_from:` якорях. Требует явных `version: vX.Y` в frontmatter каждого ARCH-документа. Если у вас нет ARCH-документов с derived_from-якорями — пара бесполезна, удалите."
 
-  # 3. WP-status легенда (REGISTRY) ↔ format-compliance таблицы (helper из scripts/iwe-drift-helpers/)
+  # 4. WP-status легенда (REGISTRY) ↔ format-compliance таблицы (helper из scripts/iwe-drift-helpers/)
   - id: wp-status-legend-drift
     source: <Governance-репо>/docs/WP-REGISTRY.md
     derived: <Governance-репо>/docs/WP-REGISTRY.md
