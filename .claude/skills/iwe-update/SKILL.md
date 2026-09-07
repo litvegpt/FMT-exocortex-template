@@ -169,3 +169,49 @@ bash .claude/scripts/load-extensions.sh iwe-update after
 
 При Day Open (шаг 5: IWE за ночь) — если `update.sh --check` показывает доступные обновления → добавить в «Требует внимания»:
 > «Доступно обновление IWE v{new}. Запустите `/iwe-update` для обновления.»
+
+<!-- USER-SPACE -->
+## Шаг 8. Проверка дрейфа CI/excluded-файлов от upstream
+
+> Найдено 2026-09-07 (TserenTserenov/FMT-exocortex-template issues #691, #692): файлы,
+> которые `update.sh` структурно не может обновить — `.github/workflows/*` (вне манифеста
+> вообще, это CI-конфиг репозитория, не платформенная поставка) и записи `excluded_paths`
+> (тестовые/авторские скрипты вроде `setup/smoke-test-fresh-install.sh`) — молча дрейфуют
+> от апстрима на форке с разошедшейся git-историей. Ни `update.sh --check`, ни
+> `/audit-installation` этого не видят. Разовая дешёвая (секунды) сверка после апдейта —
+> единственный способ заметить дрейф не постфактум через покрасневший CI.
+
+После Шага 4 (применение) выполнить:
+
+```bash
+D="$IWE_TEMPLATE"
+if git -C "$D" remote get-url upstream >/dev/null 2>&1; then
+    git -C "$D" fetch upstream --quiet 2>/dev/null
+    EXCL_SCRIPTS=$(python3 -c "
+import json
+try:
+    m = json.load(open('$D/update-manifest.json'))
+    for p in m.get('excluded_paths', []):
+        path = p['path'] if isinstance(p, dict) else p
+        if path.endswith(('.sh', '.py', '.yml', '.yaml')):
+            print(path)
+except Exception:
+    pass
+" 2>/dev/null)
+    DRIFT=$(git -C "$D" diff --stat HEAD upstream/main -- .github/workflows $EXCL_SCRIPTS 2>/dev/null)
+    if [ -n "$DRIFT" ]; then
+        echo "⚠️ CI/excluded-файлы разошлись с upstream/main (update.sh их не синхронизирует):"
+        echo "$DRIFT"
+    else
+        echo "✅ CI/excluded-файлы синхронны с upstream/main"
+    fi
+else
+    echo "ℹ️ upstream remote не настроен — проверка дрейфа пропущена"
+fi
+```
+
+Дрейф найден → не блокировать отчёт об обновлении (Шаг 6), но добавить туда отдельной строкой:
+«⚠️ Обнаружен дрейф CI/excluded-файлов от апстрима: [список файлов]. Не влияет на работу
+IWE (это не платформенная поставка), но стоит решить — перенести конкретные фиксы точечно
+(не мержить файл целиком без ревью) или оставить как есть. Решает пилот.»
+<!-- /USER-SPACE -->
