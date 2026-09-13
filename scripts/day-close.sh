@@ -1437,6 +1437,15 @@ do_backup() {
     rsync -a --delete "$WORKSPACE_DIR/.claude/rules/" "$EXOCORTEX_DST/rules/"
   fi
 
+  # Week Close W37 decision (bug-2026-09-09-exocortex-sync-hook-misses-bash.md):
+  # memory-exocortex-sync.sh only fires on Write/Edit/MultiEdit, so extensions/
+  # edited via Bash never reach the mirror. This daily pass closes that gap
+  # once a day, independent of the hook, without touching its event matcher.
+  if [ -d "$WORKSPACE_DIR/extensions" ]; then
+    mkdir -p "$EXOCORTEX_DST/extensions"
+    rsync -a --delete "$WORKSPACE_DIR/extensions/" "$EXOCORTEX_DST/extensions/"
+  fi
+
   # day-rhythm is also a separate root artefact. Exact bytes win except for a
   # legacy safety case: an empty source calendar list must not erase a non-empty
   # destination list. No YAML parser means preserve rather than guess.
