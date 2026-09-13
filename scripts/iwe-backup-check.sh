@@ -71,6 +71,18 @@ MODE="check"
 # Auto-disable iCloud check on non-macOS; can be overridden via --no-icloud
 [ "$IWE_OS" = "macos" ] && CHECK_ICLOUD=1 || CHECK_ICLOUD=0
 
+# params.yaml opt-out (Week Close W37 decision): pilot may not want
+# backup-icloud.sh to run at all — e.g. it archives material kept outside
+# git on purpose, and pilot hasn't decided how to exclude it yet. Same
+# grep-based read as other params.yaml flags (see week-draft-append.sh).
+PARAMS_FILE="${WORKSPACE_DIR:-$IWE_ROOT}/params.yaml"
+ICLOUD_CHECK_DECLINED=0
+if [ -f "$PARAMS_FILE" ]; then
+    ICLOUD_PARAM=$(grep -E "^icloud_backup_check:" "$PARAMS_FILE" 2>/dev/null | sed -E 's/^icloud_backup_check:[[:space:]]*//; s/^"//; s/"$//' || echo "")
+    [ "$ICLOUD_PARAM" = "false" ] && ICLOUD_CHECK_DECLINED=1
+fi
+[ "$ICLOUD_CHECK_DECLINED" -eq 1 ] && CHECK_ICLOUD=0
+
 # ---------- Аргументы ----------
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -272,7 +284,11 @@ if [ "$CHECK_ICLOUD" -eq 1 ]; then
 else
     echo "## 1. iCloud-бэкапы"
     echo ""
-    info "N/A (платформа: $IWE_OS — iCloud доступен только на macOS)"
+    if [ "$ICLOUD_CHECK_DECLINED" -eq 1 ]; then
+        info "N/A (icloud_backup_check: false в params.yaml — проверка выключена решением пилота)"
+    else
+        info "N/A (платформа: $IWE_OS — iCloud доступен только на macOS)"
+    fi
     echo ""
 fi
 

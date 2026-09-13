@@ -69,6 +69,15 @@ extensions_dir: extensions
 # Пример: knowledge_repo: "DS-Knowledge-Index"
 knowledge_repo: ""
 
+# === Бэкапы ===
+
+# Week Close (iwe-backup-check.sh, раздел 1): проверять ли бэкап в iCloud Drive.
+# false — раздел пропускается (N/A), никаких warning/critical по iCloud не выводится.
+# Выключайте, если backup-icloud.sh не подходит вам (например архивирует
+# материалы, которые вы намеренно держите вне git и не хотите синхронизировать
+# в облако) и вы ещё не решили, как это обойти.
+icloud_backup_check: true
+
 # === Автор шаблона ===
 
 # Авторский режим: разрешает прямое редактирование L1 файлов (protocol-*, skills/)

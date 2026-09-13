@@ -2269,7 +2269,7 @@
     },
     {
       "path": "scripts/iwe-backup-check.sh",
-      "sha256": "cdff90a0c4a4605b9c5254a2e19fe5f8a32bc64c2e53a2f4b2bfba6846a6d453"
+      "sha256": "19d63564a48113b7a31ed74b42361d1e74713240ffef9d044eea97a54249367e"
     },
     {
       "path": "scripts/iwe-bug-report.sh",
