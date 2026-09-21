@@ -24,6 +24,8 @@ peer_session — намеренно "deferred-to-session": мета-тригге
 не заявка на конкретный результат (решается на Decision Gate внутри сессии).
 """
 
+from __future__ import annotations
+
 import os
 import sys
 import json
