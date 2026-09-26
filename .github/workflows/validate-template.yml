@@ -72,6 +72,14 @@ jobs:
       - name: Install dependencies (macOS)
         if: runner.os == 'macOS'
         run: brew install jq  # python3 preinstalled
+      # Ported from upstream (WP-529 Ф9): find-python3.sh hard-requires PyYAML;
+      # Homebrew python3 is PEP668-managed, hence the --break-system-packages
+      # fallback. Linux runners already pass without it (python3-yaml present).
+      - name: Ensure PyYAML available (find-python3.sh contract)
+        run: |
+          python3 -c "import yaml" 2>/dev/null && exit 0
+          python3 -m pip install --user pyyaml 2>/dev/null && python3 -c "import yaml" 2>/dev/null && exit 0
+          python3 -m pip install --user --break-system-packages pyyaml && python3 -c "import yaml"
       - name: Run integration-contract-validator (8 detectors)
         run: bash setup/integration-contract-validator.sh
       - name: Run smoke-test-fresh-install (GOVERNANCE_REPO=${{ matrix.gov_repo }})

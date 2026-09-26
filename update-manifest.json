@@ -381,7 +381,7 @@
     },
     {
       "path": ".claude/skills/audit-installation/SKILL.md",
-      "sha256": "0d1e7dfb68f71fca83fd71e21947573e34835ba06c5c7b0f1a16cfdecf4de23e"
+      "sha256": "28f3e611921826656b571112b3bfc0ea76ae51ab18734f0d10f0d1d46eecc4c7"
     },
     {
       "path": ".claude/skills/author-mode/SKILL.md",
@@ -541,7 +541,7 @@
     },
     {
       "path": ".claude/skills/iwe-update/SKILL.md",
-      "sha256": "add0e5142c38f3e840ffa5afd69335318d2392daa22a88663d006c9b83442a16"
+      "sha256": "0ba2d945791ed62f9ba5a9fd9a5ad6749ad93403f27136c461b4a7bbfdaceb75"
     },
     {
       "path": ".claude/skills/ke/SKILL.md",
@@ -550,6 +550,10 @@
     {
       "path": ".claude/skills/kimi-peer-writer/SKILL.md",
       "sha256": "062556dc1fff91780ae31633e12e4c69dd1a584612ad46591128e6443ffe3aa8"
+    },
+    {
+      "path": ".claude/skills/lesson-close/SKILL.md",
+      "sha256": "350dbc63ad76e3f1fe64a317fc49bcb41ac78620862914fe59c3324f1724031f"
     },
     {
       "path": ".claude/skills/local-llm/SKILL.md",
@@ -776,6 +780,10 @@
       "sha256": "e643f41b2788199495c4d1271e816b4b4fb9539cedd8d1762daa4662a9126cc0"
     },
     {
+      "path": ".githooks/pre-push",
+      "sha256": "2b2e102c10c0d5ee76c6ed03ce460499231ed04d73c845107f71086b067972a6"
+    },
+    {
       "path": ".github/workflows/cloud-scheduler.yml",
       "sha256": "7bfbe1a561531dea5f2d5539a99971dcbb1167877911a67072ee8330c7e86936"
     },
@@ -821,7 +829,7 @@
     },
     {
       "path": "CLAUDE.md",
-      "sha256": "e8f9cb5c4d4e60d232f35b8b2a2f17af71303d8857ce92330ba55caa15d0ce4d"
+      "sha256": "494219707fcd99d344985aeac5732db3e558011ea91682d200f45c90f54738c2"
     },
     {
       "path": "ONTOLOGY.md",
@@ -1441,7 +1449,7 @@
     },
     {
       "path": "memory/MEMORY.md",
-      "sha256": "00d8bfdd7590f16e3d344b06d3f18dcafa2f26929fed443111ea679f50164cb7"
+      "sha256": "9bd60d755511635ced84ca04652027db47857a1fcaf985d898ddd9f29c7944aa"
     },
     {
       "path": "memory/agent-architecture-framework.md",
@@ -2420,6 +2428,10 @@
       "sha256": "faab91cc4b183bf81affa0d51e2cdb896ad17521b4893fa192c2e7520cb04b03"
     },
     {
+      "path": "scripts/lesson-close.sh",
+      "sha256": "202440eae8e614d2f2e8675af63efb0a0b053b5b3832083aec8f6e64f1324023"
+    },
+    {
       "path": "scripts/lib/common.sh",
       "sha256": "ac0700709a939e4f0fc8c9bb504c9918e4f0a7d17694d65a7b7682ebb4979bf1"
     },
@@ -3081,90 +3093,18 @@
     }
   ],
   "excluded_paths": [
-    ".github/workflows/nightly-template-audit.yml",
-    "docs/developer/README.md",
-    "docs/developer/card-template.md",
-    "docs/developer/code-style.md",
-    "docs/developer/developer-guide.md",
-    "docs/developer/external-developer-letter.md",
-    "docs/developer/proposal-process.md",
-    "docs/developer/testing-as-spec.md",
-    "docs/developer/working-with-claude.md",
     "promotion-status.yaml",
     "scripts/agent-dashboard.py",
     "scripts/audit-ad-hoc-roles.py",
-    "scripts/check-component-parity.sh",
-    "scripts/check-manifest-rename-coverage.py",
-    "scripts/delivery_checks.py",
     "scripts/generate-helper-catalog.py",
-    "scripts/guide-kit-sync-state.yaml",
-    "scripts/guide-kit-sync.sh",
     "scripts/iwe-catalog-list.py",
     "scripts/iwe-trace.py",
     "scripts/session-dispatcher-tsekh.py",
     "scripts/tests/conftest.py",
-    "scripts/tests/day-open-llm-fill-today-plan-detect-smoke.sh",
-    "scripts/tests/day-open-world-fill-smoke.sh",
-    "scripts/tests/lib/extract-update-download-batch.sh",
-    "scripts/tests/session-guard-audit-validate-orz-batch-smoke.sh",
-    "scripts/tests/test-captures-write-lock-840.sh",
-    "scripts/tests/test-update-extractor-feeders.sh",
-    "scripts/tests/test_adopt_governance.sh",
     "scripts/tests/test_agent_dashboard.py",
-    "scripts/tests/test_ar293_ai_cli_override.sh",
-    "scripts/tests/test_copy_to_aisystant.py",
-    "scripts/tests/test_create_wp_verification_class.sh",
-    "scripts/tests/test_day_close_prepare.py",
-    "scripts/tests/test_day_open_checks_runner_false_positive.sh",
-    "scripts/tests/test_day_open_preflight_calendar_path.sh",
-    "scripts/tests/test_delivery_content.py",
-    "scripts/tests/test_delivery_formal.py",
-    "scripts/tests/test_dry_run_gate.py",
-    "scripts/tests/test_generate_manifest_deprecated_excluded.sh",
-    "scripts/tests/test_governance_ambiguity.sh",
-    "scripts/tests/test_issue_529_owner_integrity.sh",
-    "scripts/tests/test_issue_530_staged_self_scan.sh",
-    "scripts/tests/test_issue_531_index_health_status_cell.py",
-    "scripts/tests/test_issue_532_dayplan_strategy_gate.sh",
-    "scripts/tests/test_issue_544_staged_precommit.sh",
-    "scripts/tests/test_issue_545_sessions_root.sh",
-    "scripts/tests/test_issue_549_dryrun_redesign.sh",
-    "scripts/tests/test_issue_555_claude_silent_loss.sh",
-    "scripts/tests/test_issue_581_calendar_single_source.sh",
-    "scripts/tests/test_issue_582_audit_promoted_layout.sh",
-    "scripts/tests/test_issue_583_dayopen_yaml.sh",
-    "scripts/tests/test_issue_584_build_version.sh",
-    "scripts/tests/test_issue_596_weekreport_filename.sh",
-    "scripts/tests/test_issue_633_resolve_governance_branch.sh",
-    "scripts/tests/test_issue_657.sh",
-    "scripts/tests/test_issue_660.sh",
-    "scripts/tests/test_issue_665.sh",
-    "scripts/tests/test_issue_711_conflict_base.sh",
-    "scripts/tests/test_issue_713_registry_status.sh",
-    "scripts/tests/test_issue_729_strategy_day.sh",
-    "scripts/tests/test_issue_810_scan_selfexcl.sh",
-    "scripts/tests/test_issue_extensions_dir_missing.sh",
-    "scripts/tests/test_issue_python_resolver_contract.sh",
-    "scripts/tests/test_manifest_coverage_local.py",
-    "scripts/tests/test_mount_readonly_packs.sh",
-    "scripts/tests/test_pending_phases_sweep.sh",
-    "scripts/tests/test_release_receipt.sh",
-    "scripts/tests/test_residency_gate_skill_adapter.py",
-    "scripts/tests/test_session_guard_unknown_flag.sh",
-    "scripts/tests/test_setup_runtime_isolation.sh",
     "scripts/tests/test_skill_promote.py",
-    "scripts/tests/test_translate_delta.py",
-    "scripts/tests/test_translate_parse.py",
-    "scripts/tests/test_update_download_batch_network_failure_failclosed.sh",
-    "scripts/tests/test_update_retry_and_classify_undeliverable_file.sh",
-    "scripts/tests/test_update_verify_batch_integrity_hash_mismatch_failclosed.sh",
-    "scripts/tests/test_validate_hypothesis_priority.sh",
-    "scripts/translate.py",
-    "scripts/verify-template-integrity.sh",
     "setup/detector-fixtures/README.md",
-    "setup/detector-fixtures/detector_07/negative_env_fallback.md",
     "setup/detector-fixtures/detector_07/positive_backtick_slash.md",
-    "setup/detector-fixtures/detector_07/positive_quoted_literal.md",
     "setup/detector-regex.sh",
     "setup/integration-contract-validator.sh",
     "setup/optional/COVER-IMAGES.md",
@@ -3182,19 +3122,7 @@
     "setup/promote-fixtures/sample-skill/scripts/sample-tool.sh",
     "setup/release-audit-prompt.md",
     "setup/smoke-test-fresh-install.sh",
-    "setup/test-attestation-build-statement.sh",
-    "setup/test-attestation-canonical-digest.sh",
-    "setup/test-build-runtime-preserves-live-state.sh",
-    "setup/test-day-open-delivery-closure.sh",
-    "setup/test-delivery-route-label.sh",
     "setup/test-detectors.sh",
-    "setup/test-update-channel-enum.sh",
-    "setup/test-update-edge-cases.sh",
-    "setup/test-update-install-path-provenance.sh",
-    "setup/test-update-issue-226.sh",
-    "setup/test-update-release-channel.sh",
-    "setup/test-update-self-overwrite.sh",
-    "setup/test-update-step0-staged-rename.sh",
     "setup/ux-walkthrough-prompt.md"
   ],
   "deprecated_files": [
