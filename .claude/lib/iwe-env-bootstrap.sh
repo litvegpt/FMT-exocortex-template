@@ -153,7 +153,7 @@ esac
 PARAMS_FILE_FOR_BACKUP="${WORKSPACE_DIR}/params.yaml"
 BACKUP_DIR_OVERRIDE=""
 if [ -f "$PARAMS_FILE_FOR_BACKUP" ]; then
-  BACKUP_DIR_OVERRIDE=$(grep -E '^backup_dir:' "$PARAMS_FILE_FOR_BACKUP" 2>/dev/null | head -1 \
+  BACKUP_DIR_OVERRIDE=$( { grep -E '^backup_dir:' "$PARAMS_FILE_FOR_BACKUP" 2>/dev/null || true; } | head -1 \
     | sed -E 's/^backup_dir:[[:space:]]*//; s/[[:space:]]+#.*$//; s/[[:space:]]+$//; s/^["'"'"']//; s/["'"'"']$//')
   # Same leading-~ expansion as WORKSPACE_DIR above and linear_sync_path in
   # scripts/day-close.sh — bash does not expand ~ inside a variable
