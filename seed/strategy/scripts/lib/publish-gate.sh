@@ -77,12 +77,20 @@ publish_commit() {  # <repo-dir> <sha> <priority> <reason>
     # DS_PUBLISH_RUN_ID (if the caller exports one) rides into ds-publish.sh
     # as a structured --run-id, so the notification queue/digest can
     # correlate messages of one run without parsing a reason-text tail.
-    local run_id_args=()
-    [[ -n "${DS_PUBLISH_RUN_ID:-}" ]] && run_id_args=(--run-id "$DS_PUBLISH_RUN_ID")
+    # Fork fix (local, on top of 0.41.8): the shipped ds-publish.sh does not
+    # parse --exact-commit/--run-id and exits with usage on either, so every
+    # extractor publish failed. Pass each flag only when the publisher's
+    # argument parser knows it; --from-commit alone already makes ds-publish.sh
+    # carry exactly that one commit.
+    local run_id_args=() exact_args=(--exact-commit "$sha")
+    if [[ -n "${DS_PUBLISH_RUN_ID:-}" ]] && grep -q -- '--run-id)' "$canonical_publish" 2>/dev/null; then
+        run_id_args=(--run-id "$DS_PUBLISH_RUN_ID")
+    fi
+    grep -q -- '--exact-commit)' "$canonical_publish" 2>/dev/null || exact_args=()
     bash "$canonical_publish" "$repo" "$priority" --reason "$reason" \
         ${run_id_args[@]+"${run_id_args[@]}"} \
         --from-commit "$sha" \
-        --exact-commit "$sha"
+        ${exact_args[@]+"${exact_args[@]}"}
 }
 
 # push_branch <repo-dir> -- plain `git push` of the current branch, setting
