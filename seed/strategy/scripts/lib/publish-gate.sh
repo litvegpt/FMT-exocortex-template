@@ -87,10 +87,26 @@ publish_commit() {  # <repo-dir> <sha> <priority> <reason>
         run_id_args=(--run-id "$DS_PUBLISH_RUN_ID")
     fi
     grep -q -- '--exact-commit)' "$canonical_publish" 2>/dev/null || exact_args=()
+    # An isolated copy (extractor/feed-*, extractor/inbox-check-*) sits on a
+    # local-only branch, and ds-publish.sh defaults the target to the current
+    # branch: the fetch of that name from origin fails. Target origin's default
+    # branch instead, which is what the isolated copy was created from.
+    local branch_args=() current_branch default_branch
+    current_branch=$(git -C "$repo" symbolic-ref --quiet --short HEAD 2>/dev/null || true)
+    if [[ -n "$current_branch" ]] && grep -q -- '--branch)' "$canonical_publish" 2>/dev/null \
+        && ! git -C "$repo" ls-remote --exit-code --heads origin "$current_branch" >/dev/null 2>&1; then
+        default_branch=$(git -C "$repo" symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null | sed 's#^origin/##')
+        if [[ -n "$default_branch" ]]; then
+            branch_args=(--branch "$default_branch")
+        else
+            echo "WARNING: $current_branch is not on origin and origin/HEAD is unknown -- publishing without --branch" >&2
+        fi
+    fi
     bash "$canonical_publish" "$repo" "$priority" --reason "$reason" \
         ${run_id_args[@]+"${run_id_args[@]}"} \
         --from-commit "$sha" \
-        ${exact_args[@]+"${exact_args[@]}"}
+        ${exact_args[@]+"${exact_args[@]}"} \
+        ${branch_args[@]+"${branch_args[@]}"}
 }
 
 # push_branch <repo-dir> -- plain `git push` of the current branch, setting
