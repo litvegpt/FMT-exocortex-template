@@ -1602,9 +1602,9 @@ case "$1" in
         ;;
 
     "git-diff-feed")
-        # WP-247 Ф-MULTI-SOURCE.2: git-diff feeder (cron 06:00/21:00).
+        # WP-247 Ф-MULTI-SOURCE.2: git-diff feeder (cron 09:00/21:00; local fork fix 2026-10-17).
         # Извлекает кандидатов из git log за окно и пишет ###-блоки в captures-inbox.
-        # Окно: $2 (по умолчанию "12 hours ago").
+        # Окно: $2 (по умолчанию "13 hours ago": 12h between runs + 1h overlap for a late start).
         #
         # issue #840: this case wrote to the same captures.md as
         # session-close-feed without taking any lock -- a concurrent
@@ -1617,7 +1617,7 @@ case "$1" in
             exit 0
         fi
         trap 'release_inbox_lock "$feed_lock_dir" "git-diff-feed"' EXIT
-        SINCE="${2:-12 hours ago}"
+        SINCE="${2:-13 hours ago}"
         log "Running git-diff FEED (since: $SINCE)"
         run_feed_isolated "git-diff-feed" "$SINCE" "git-diff"
         notify_telegram "git-diff-feed"
