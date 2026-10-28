@@ -13,6 +13,11 @@
 set -uo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 shopt -s nullglob
+# Many tests swap HOME for a fake one. A `pip install --user` PyYAML lives under
+# the real HOME and vanished with it, so those tests failed only on machines
+# with a user-site install (issues #1342, #1343). Pin it once for every test.
+PYTHONUSERBASE="${PYTHONUSERBASE:-$(python3 -m site --user-base 2>/dev/null)}"
+export PYTHONUSERBASE
 
 fail=0
 ran=0
@@ -29,6 +34,9 @@ ADDITIONAL_ISSUE_TESTS=(
     "scripts/tests/test_hook_classification.sh"
     "scripts/tests/test_launchd_identity_runtime.sh"
     "scripts/tests/test_update_install_path_guard.sh"
+    "scripts/tests/test_1229_sync_bundle.sh"
+    "scripts/tests/test_1230_publish.sh"
+    "scripts/tests/test_1231_artifactor.sh"
     "scripts/tests/test_update_install_path_guard_provenance.sh"
 )
 

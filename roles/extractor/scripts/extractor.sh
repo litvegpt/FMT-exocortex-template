@@ -81,7 +81,9 @@ fi
 # run_inbox_check_isolated().
 assert_ai_cli_root_compat() {  # <flags>
     local flags="${1:-}"
-    local uid="${EUID:-$(id -u)}"
+    # IWE_EXTRACTOR_TEST_EUID: test-only override (EUID is bash-readonly, so a
+    # test harness cannot simulate root without it); unset in every real run.
+    local uid="${IWE_EXTRACTOR_TEST_EUID:-${EUID:-$(id -u)}}"
     [ "$uid" -eq 0 ] || return 0
     if printf '%s\n' "$flags" | grep -Eq '(^|[[:space:]])--dangerously-skip-permissions([[:space:]]|$)'; then
         echo "[$(date '+%H:%M:%S')] ERROR: запуск от root несовместим с --dangerously-skip-permissions (AI CLI откажет на каждом вызове). Снимите флаг (AI_CLI_EXTRA_FLAGS/IWE_EXTRACTOR_INBOX_AI_FLAGS) или запускайте не от root." >&2
@@ -786,7 +788,7 @@ commit_extractor_changes() {
                         . "$publish_gate"
                         if is_ds_repo_by_origin "$strategy_dir" \
                             && IWE_WORKSPACE="${IWE_ROOT:-$HOME/IWE}" \
-                               publish_commit "$strategy_dir" "$latest_local" normal "extractor $commit_mode $DATE" >> "$LOG_FILE" 2>&1; then
+                               publish_commit "$strategy_dir" "$latest_local" normal "extractor $commit_mode $DATE" "$gov_branch" >> "$LOG_FILE" 2>&1; then
                             log "Published pre-existing extractor commit $latest_local via ds-publish.sh"
                             EXTRACTOR_COMMIT_RESULT="published"
                         elif ! is_ds_repo_by_origin "$strategy_dir" && push_branch "$strategy_dir" >> "$LOG_FILE" 2>&1; then
@@ -893,7 +895,7 @@ commit_extractor_changes() {
     # not inherit that; it needs the real canonical workspace.
     if is_ds_repo_by_origin "$strategy_dir" \
         && IWE_WORKSPACE="${IWE_ROOT:-$HOME/IWE}" \
-           publish_commit "$strategy_dir" "$head_after" normal "extractor $commit_mode $DATE" >> "$LOG_FILE" 2>&1; then
+           publish_commit "$strategy_dir" "$head_after" normal "extractor $commit_mode $DATE" "$gov_branch" >> "$LOG_FILE" 2>&1; then
         log "Published $repo_name via ds-publish.sh (local commit $head_after)"
         EXTRACTOR_COMMIT_RESULT="published"
     elif ! is_ds_repo_by_origin "$strategy_dir" && push_branch "$strategy_dir" >> "$LOG_FILE" 2>&1; then
@@ -1602,9 +1604,10 @@ case "$1" in
         ;;
 
     "git-diff-feed")
-        # WP-247 Ф-MULTI-SOURCE.2: git-diff feeder (cron 09:00/21:00; local fork fix 2026-10-17).
+        # WP-247 Ф-MULTI-SOURCE.2: git-diff feeder (cron 09:00/21:00, issue #1252 —
+        # было 06:00/21:00 с окном 12ч, промежутки 9ч/15ч оставляли дыру и дубль).
         # Извлекает кандидатов из git log за окно и пишет ###-блоки в captures-inbox.
-        # Окно: $2 (по умолчанию "13 hours ago": 12h between runs + 1h overlap for a late start).
+        # Окно: $2 (по умолчанию "13 hours ago" — покрывает оба промежутка без дыры).
         #
         # issue #840: this case wrote to the same captures.md as
         # session-close-feed without taking any lock -- a concurrent

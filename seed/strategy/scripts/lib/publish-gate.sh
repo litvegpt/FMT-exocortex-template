@@ -56,8 +56,8 @@ is_ds_repo_by_origin() {  # <repo-dir>
 # of which checkout the caller itself lives in -- warns, doesn't block, if the
 # caller's own copy has drifted from canonical (a false block would be worse
 # than a stale-copy warning on this critical path).
-publish_commit() {  # <repo-dir> <sha> <priority> <reason>
-    local repo="$1" sha="$2" priority="$3" reason="$4"
+publish_commit() {  # <repo-dir> <sha> <priority> <reason> [branch]
+    local repo="$1" sha="$2" priority="$3" reason="$4" branch="${5:-}"
     local gov_repo="${IWE_GOVERNANCE_REPO:-DS-strategy}"
     local canonical_publish="$IWE_ROOT/$gov_repo/scripts/ds-publish.sh"
     local self_publish="$(dirname "${BASH_SOURCE[0]}")/../ds-publish.sh"
@@ -77,36 +77,20 @@ publish_commit() {  # <repo-dir> <sha> <priority> <reason>
     # DS_PUBLISH_RUN_ID (if the caller exports one) rides into ds-publish.sh
     # as a structured --run-id, so the notification queue/digest can
     # correlate messages of one run without parsing a reason-text tail.
-    # Fork fix (local, on top of 0.41.8): the shipped ds-publish.sh does not
-    # parse --exact-commit/--run-id and exits with usage on either, so every
-    # extractor publish failed. Pass each flag only when the publisher's
-    # argument parser knows it; --from-commit alone already makes ds-publish.sh
-    # carry exactly that one commit.
-    local run_id_args=() exact_args=(--exact-commit "$sha")
-    if [[ -n "${DS_PUBLISH_RUN_ID:-}" ]] && grep -q -- '--run-id)' "$canonical_publish" 2>/dev/null; then
-        run_id_args=(--run-id "$DS_PUBLISH_RUN_ID")
-    fi
-    grep -q -- '--exact-commit)' "$canonical_publish" 2>/dev/null || exact_args=()
-    # An isolated copy (extractor/feed-*, extractor/inbox-check-*) sits on a
-    # local-only branch, and ds-publish.sh defaults the target to the current
-    # branch: the fetch of that name from origin fails. Target origin's default
-    # branch instead, which is what the isolated copy was created from.
-    local branch_args=() current_branch default_branch
-    current_branch=$(git -C "$repo" symbolic-ref --quiet --short HEAD 2>/dev/null || true)
-    if [[ -n "$current_branch" ]] && grep -q -- '--branch)' "$canonical_publish" 2>/dev/null \
-        && ! git -C "$repo" ls-remote --exit-code --heads origin "$current_branch" >/dev/null 2>&1; then
-        default_branch=$(git -C "$repo" symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null | sed 's#^origin/##')
-        if [[ -n "$default_branch" ]]; then
-            branch_args=(--branch "$default_branch")
-        else
-            echo "WARNING: $current_branch is not on origin and origin/HEAD is unknown -- publishing without --branch" >&2
-        fi
-    fi
+    local run_id_args=()
+    [[ -n "${DS_PUBLISH_RUN_ID:-}" ]] && run_id_args=(--run-id "$DS_PUBLISH_RUN_ID")
+    # Without an explicit branch, ds-publish.sh targets $repo's OWN current
+    # branch -- fine for an ordinary checkout, but a caller publishing from a
+    # throwaway isolated worktree (e.g. extractor.sh's isolated-feed, checked
+    # out on extractor/feed-<time>-<pid>) must say so, or ds-publish.sh tries
+    # to fetch/push a branch that only ever exists in that worktree (#1289).
+    local branch_args=()
+    [[ -n "$branch" ]] && branch_args=(--branch "$branch")
     bash "$canonical_publish" "$repo" "$priority" --reason "$reason" \
         ${run_id_args[@]+"${run_id_args[@]}"} \
+        ${branch_args[@]+"${branch_args[@]}"} \
         --from-commit "$sha" \
-        ${exact_args[@]+"${exact_args[@]}"} \
-        ${branch_args[@]+"${branch_args[@]}"}
+        --exact-commit "$sha"
 }
 
 # push_branch <repo-dir> -- plain `git push` of the current branch, setting

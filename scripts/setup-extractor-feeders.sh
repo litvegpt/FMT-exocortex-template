@@ -153,10 +153,6 @@ fi
 fi  # SCHEDULE_ONLY
 
 # === 3. Cron для git-diff-feed (09:00 / 21:00) ===
-# Local fork fix 2026-10-17 (pilot decision): upstream 06:00 + 21:00 with a
-# fixed 12h window left 06:00-09:00 uncovered and read 18:00-21:00 twice.
-# 09:00 + 21:00 with a 13h window covers the whole day; the 1h overlap absorbs
-# a late start after Mac sleep, and the feeder de-duplicates against captures.
 
 log "3/4 Cron для git-diff-feed"
 
@@ -249,11 +245,24 @@ elif [ "$PLATFORM" = "Linux" ]; then
         systemctl --user daemon-reload
         ok "systemd units удалены"
     elif [ "$MODE" != "--check" ]; then
+        # issue #1303 (Linux-половина #984, macOS-плист чинили в PR #1022):
+        # extractor.sh resolves session-guard.sh as ${IWE_SCRIPTS:-$HOME/IWE/scripts};
+        # systemd --user не наследует login-shell окружение, поэтому без явных
+        # Environment= строк резолв падает на дефолт, которого в типичной
+        # установке нет — фид находит кандидатов, но не может их сохранить.
+        IWE_TEMPLATE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+        IWE_SCRIPTS="${IWE_SCRIPTS:-$IWE_TEMPLATE_DIR/scripts}"
         cat > "$UNIT_DIR/extractor-git-diff-feed.service" <<UNIT
 [Unit]
 Description=IWE Extractor: git-diff-feed (WP-247 Ф-MULTI-SOURCE.2)
 [Service]
 Type=oneshot
+Environment=HOME=$HOME
+Environment=IWE_TEMPLATE=$IWE_TEMPLATE_DIR
+Environment=IWE_WORKSPACE=$IWE_WORKSPACE
+Environment=IWE_GOVERNANCE_REPO=$GOVERNANCE_REPO
+Environment=IWE_RUNTIME=$IWE_RUNTIME
+Environment=IWE_SCRIPTS=$IWE_SCRIPTS
 ExecStart=$EXTRACTOR_SH git-diff-feed "13 hours ago"
 UNIT
         cat > "$UNIT_DIR/extractor-git-diff-feed.timer" <<TIMER
