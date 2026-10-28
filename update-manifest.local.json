@@ -1,0 +1,8 @@
+{
+  "excluded_paths": [
+    {
+      "path": ".githooks/pre-push",
+      "reason": "fork-owned: force-push guard added in our fork (c31b2cd0, WP-436); not in the author's manifest since 0.41.10 - pilot decision 2026-10-28 (WP-67 Ph2)"
+    }
+  ]
+}
